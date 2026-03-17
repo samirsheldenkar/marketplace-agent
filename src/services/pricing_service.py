@@ -46,9 +46,8 @@ class PricingService:
             # No data available
             return 0.0, "both"
 
-        # Calculate median of available medians
-        prices.sort()
-        overall_median = prices[len(prices) // 2]
+        # Calculate average of available medians if multiple exist, else use the single available median
+        overall_median = sum(prices) / len(prices)
 
         # Apply discount for quick sale
         discount_factor = 1 - (self.settings.price_discount_pct / 100)

@@ -45,10 +45,11 @@ class ImageService:
         content = await file.read()
         await file.seek(0)  # Reset for later use
 
-        if len(content) > self.settings.max_image_size_bytes:
+        max_bytes = self.settings.max_image_size_mb * 1024 * 1024
+        if len(content) > max_bytes:
             raise ValidationError(
                 f"Image too large: {len(content)} bytes. "
-                f"Max: {self.settings.max_image_size_bytes} bytes"
+                f"Max: {max_bytes} bytes"
             )
 
     async def store_images(

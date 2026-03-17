@@ -28,6 +28,7 @@ async def create_listing(
     size: Optional[str] = Form(None),
     color: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
+    fast_sale: bool = Form(True, description="Apply discount pricing for quick sale"),
     settings: Settings = Depends(get_settings),
     db: AsyncSession = Depends(get_db),
 ):

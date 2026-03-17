@@ -58,9 +58,9 @@ class Settings(BaseSettings):
     litellm_api_key: str = ""
 
     # Model routing
-    vision_model: str = "gpt-4-vision-preview"
-    reasoning_model: str = "gpt-4"
-    drafting_model: str = "gpt-3.5-turbo"
+    vision_model: str = "openai/gpt-4o"
+    reasoning_model: str = "openai/gpt-4o"
+    drafting_model: str = "ollama/llama3"
 
     # Agent thresholds
     confidence_threshold: float = 0.7

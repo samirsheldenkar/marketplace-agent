@@ -22,6 +22,7 @@ class ListingDraft(TypedDict):
     category_suggestions: List[str]
     shipping_suggestion: str
     returns_policy: str
+    platform_variants: dict[str, dict]
 
 
 class ListState(TypedDict, total=False):
