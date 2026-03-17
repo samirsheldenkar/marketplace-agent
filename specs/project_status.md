@@ -301,10 +301,18 @@ The marketplace listing agent project foundation has been established with a com
 ### Technical Debt / Known Issues
 - [ ] LSP import errors (dependencies not installed in dev environment)
 - [ ] Route implementations are skeletons (return 501 Not Implemented)
-- [ ] Database initialization creates tables but doesn't run migrations yet
 - [ ] No circuit breaker implementation yet
 - [ ] No retry logic implemented yet
 - [ ] Test files are empty
+
+### Resolved Issues
+- [x] Database initialization creates tables but doesn't run migrations yet (Resolved - Alembic initialized and migrations generated)
+- [x] Image sizes not using megabytes specification
+- [x] LiteLLM models incorrectly defaulted in config
+- [x] Missing `fast_sale` parameter on API
+- [x] Missing `platform_variants` in `ListingDraft` state
+- [x] Incorrect DB types (`Float` to `Numeric(10,2)`) and missing `CHECK` constraint on status
+- [x] Pricing skew in `PricingService` logic
 
 ### Blockers
 None. Ready to proceed with Phase 2.
@@ -364,7 +372,7 @@ src/
     └── repositories.py (skeleton)
 ```
 
-### Configuration & Infrastructure (8 files)
+### Configuration & Infrastructure (9 files)
 ```
 ├── docker/
 │   ├── Dockerfile
@@ -372,10 +380,11 @@ src/
 │   └── litellm_config.yaml
 ├── alembic/
 │   ├── alembic.ini
+│   ├── script.py.mako
 │   ├── env.py
 │   └── versions/
 │       ├── __init__.py
-│       └── 001_initial_schema.py
+│       └── 84cd96a0000f_update_schema_types_and_constraints.py
 ├── pyproject.toml
 └── .env.example
 ```
