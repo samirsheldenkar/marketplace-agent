@@ -1,0 +1,1 @@
+"""Vinted scraper node."""
