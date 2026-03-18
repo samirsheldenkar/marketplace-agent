@@ -1,8 +1,9 @@
 # Project Status: Hybrid eBay/Vinted Listing Agent
 
-**Last Updated**: 2026-03-18  
+**Last Updated**: 2026-03-18 (commit 679e36f)  
 **Current Phase**: Phase 4 Complete (Production Readiness)  
-**Status**: Ready for deployment
+**Status**: Ready for deployment  
+**Git**: All changes committed and pushed to main
 
 ---
 
@@ -517,30 +518,11 @@ Phase 4 is **COMPLETE**. The marketplace listing agent is ready for deployment.
 
 ### Post-Deployment (Optional Enhancements)
 
-- **Image EXIF stripping** - Add to `image_service.py`
-- **E2E tests** - Complete end-to-end workflow tests
-- **CI/CD pipeline** - GitHub Actions for automated testing
-- **Documentation** - Deployment guide, troubleshooting guide
-- **Monitoring** - Set up Prometheus/Grafana dashboards
-   - `src/api/routes.py` - Complete POST /listing/{id}/clarify
-   - `src/api/routes.py` - Complete GET /listing/{id}
-
-3. **Structured Logging**:
-   - Configure structlog in `src/main.py`
-   - Add context injection middleware
-   - PII redaction processors
-
-4. **Observability**:
-   - Prometheus metrics endpoint
-   - Custom metrics for listings, scrapers, LLM calls
-
-5. **Testing**:
-   - Unit tests for services and nodes
-   - Integration tests for API endpoints
-   - E2E tests for happy path and clarification flow
-
-6. **n8n Workflow**:
-   - `n8n/workflows/listing_workflow.json` - Complete workflow template
+- [ ] **Image EXIF stripping** - Add to `image_service.py`
+- [ ] **E2E tests** - Complete end-to-end workflow tests
+- [ ] **CI/CD pipeline** - GitHub Actions for automated testing
+- [ ] **Documentation** - Deployment guide, troubleshooting guide
+- [ ] **Monitoring** - Set up Prometheus/Grafana dashboards
 
 ---
 
