@@ -1,0 +1,471 @@
+{
+  "name": "Marketplace Listing Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "listing-agent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "listing-agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AGENT_SERVICE_URL}}/api/v1/listing",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.AGENT_API_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "images",
+              "value": "={{ $json.body.images }}"
+            },
+            {
+              "name": "brand",
+              "value": "={{ $json.body.brand }}"
+            },
+            {
+              "name": "condition",
+              "value": "={{ $json.body.condition }}"
+            },
+            {
+              "name": "notes",
+              "value": "={{ $json.body.notes }}"
+            },
+            {
+              "name": "platform_preference",
+              "value": "={{ $json.body.platform_preference }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "http-create-listing",
+      "name": "Create Listing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "value2": "clarification"
+            }
+          ]
+        }
+      },
+      "id": "if-check-status",
+      "name": "Check Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "listing_id",
+              "value": "={{ $json.listing_id }}"
+            },
+            {
+              "name": "question",
+              "value": "={{ $json.clarification_question }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-clarification-context",
+      "name": "Set Clarification Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "webhookId": "clarification-webhook",
+        "httpMethod": "POST",
+        "path": "listing-agent/clarify",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-clarification",
+      "name": "Wait for Clarification",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AGENT_SERVICE_URL}}/api/v1/listing/{{$json.body.listing_id}}/clarify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.AGENT_API_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "answer",
+              "value": "={{ $json.body.answer }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-submit-clarification",
+      "name": "Submit Clarification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.AGENT_SERVICE_URL}}/api/v1/listing/{{$json.listing_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.AGENT_API_KEY}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-get-status",
+      "name": "Get Listing Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "value2": "clarification"
+            }
+          ]
+        }
+      },
+      "id": "if-check-status-loop",
+      "name": "Check Status Loop",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1650, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "listing_id",
+              "value": "={{ $json.listing_id }}"
+            },
+            {
+              "name": "question",
+              "value": "={{ $json.clarification_question }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-clarification-context-loop",
+      "name": "Set Clarification Context Loop",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the final listing response\nconst data = $input.all()[0].json;\n\nconst response = {\n  success: true,\n  listing_id: data.listing_id,\n  status: data.status,\n  item: {\n    type: data.item?.type || 'Unknown',\n    brand: data.item?.brand || 'Unknown',\n    condition: data.item?.condition || 'Unknown',\n    confidence: data.item?.confidence || 0\n  },\n  pricing: {\n    suggested_price: data.pricing?.suggested_price || 0,\n    currency: data.pricing?.currency || 'GBP',\n    preferred_platform: data.pricing?.preferred_platform || 'ebay',\n    price_range: {\n      min: data.pricing?.price_range?.min || 0,\n      max: data.pricing?.price_range?.max || 0\n    },\n    comparable_listings: data.pricing?.comparable_listings || []\n  },\n  listing_draft: {\n    title: data.listing_draft?.title || '',\n    description: data.listing_draft?.description || '',\n    category_suggestions: data.listing_draft?.category_suggestions || [],\n    attributes: data.listing_draft?.attributes || {}\n  },\n  created_at: new Date().toISOString()\n};\n\nreturn [{ json: response }];"
+      },
+      "id": "code-format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-success",
+      "name": "Return Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": false, \"error\": \"{{ $json.message || 'An error occurred' }}\", \"listing_id\": \"{{ $json.listing_id || '' }}\" }",
+        "options": {
+          "responseCode": 500,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-error",
+      "name": "Return Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"status\": \"clarification_needed\", \"listing_id\": \"{{ $json.listing_id }}\", \"question\": \"{{ $json.clarification_question }}\", \"webhook_url\": \"{{ $env.AGENT_SERVICE_URL }}/webhook/listing-agent/clarify\" }",
+        "options": {
+          "responseCode": 202,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-clarification",
+      "name": "Return Clarification Request",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2050, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"status\": \"clarification_submitted\", \"listing_id\": \"{{ $json.listing_id }}\", \"message\": \"Clarification received. Processing will continue.\" }",
+        "options": {
+          "responseCode": 202,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-clarification-received",
+      "name": "Return Clarification Received",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Listing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Listing": {
+      "main": [
+        [
+          {
+            "node": "Check Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          {
+            "node": "Set Clarification Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Clarification Context": {
+      "main": [
+        [
+          {
+            "node": "Wait for Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Clarification": {
+      "main": [
+        [
+          {
+            "node": "Submit Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit Clarification": {
+      "main": [
+        [
+          {
+            "node": "Get Listing Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Listing Status": {
+      "main": [
+        [
+          {
+            "node": "Check Status Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status Loop": {
+      "main": [
+        [
+          {
+            "node": "Set Clarification Context Loop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Clarification Received",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Clarification Context Loop": {
+      "main": [
+        [
+          {
+            "node": "Wait for Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Return Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "marketplace-listing-agent"
+  },
+  "tags": [
+    {
+      "name": "marketplace",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "listing",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "automation",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "pinData": {}
+}

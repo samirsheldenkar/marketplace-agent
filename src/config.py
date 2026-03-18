@@ -38,6 +38,7 @@ class Settings(BaseSettings):
         api_port: API server port.
         api_key: API key for authentication.
         api_rate_limit_rpm: Rate limit in requests per minute.
+        redis_url: Redis connection URL for rate limiting.
 
     """
 
@@ -89,6 +90,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     api_key: str = ""
     api_rate_limit_rpm: int = 30
+    redis_url: str = (
+        ""  # Redis connection URL for rate limiting (e.g., redis://localhost:6379)
+    )
 
 
 @lru_cache
