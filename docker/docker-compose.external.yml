@@ -1,0 +1,75 @@
+version: "3.8"
+
+# External Services Docker Compose
+# Use this when LiteLLM, Ollama, and n8n are running on separate machines
+# This compose only includes the Agent Service and PostgreSQL
+#
+# Prerequisites:
+# - Tailscale (or VPN) connecting all machines
+# - LiteLLM running and accessible via Tailscale IP
+# - n8n running on same VPS as this agent service
+# - PostgreSQL password changed from default
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${MARKETPLACE_DB_USER:-marketplace}
+      POSTGRES_PASSWORD: ${MARKETPLACE_DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${MARKETPLACE_DB_NAME:-marketplace}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # No exposed port - only accessible via Docker network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MARKETPLACE_DB_USER:-marketplace}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - marketplace
+    restart: unless-stopped
+
+  agent-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      # Database (local PostgreSQL)
+      MARKETPLACE_DATABASE_URL: postgresql+asyncpg://${MARKETPLACE_DB_USER:-marketplace}:${MARKETPLACE_DB_PASSWORD:-changeme}@postgres:5432/${MARKETPLACE_DB_NAME:-marketplace}
+      
+      # External LiteLLM (via Tailscale)
+      MARKETPLACE_LITELLM_URL: ${MARKETPLACE_LITELLM_URL:-http://localhost:4000}
+      MARKETPLACE_LITELLM_API_KEY: ${MARKETPLACE_LITELLM_API_KEY}
+      
+      # API Authentication (for n8n)
+      MARKETPLACE_API_KEY: ${MARKETPLACE_API_KEY}
+      
+      # Scrapers
+      MARKETPLACE_APIFY_API_TOKEN: ${MARKETPLACE_APIFY_API_TOKEN}
+      
+      # Image storage
+      MARKETPLACE_IMAGE_STORAGE_PATH: /data/images
+    volumes:
+      - agent_images:/data/images
+    ports:
+      # Bind to all interfaces so n8n on same VPS can reach it
+      - "0.0.0.0:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - marketplace
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  agent_images:
+
+networks:
+  marketplace:
+    driver: bridge
