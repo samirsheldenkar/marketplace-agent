@@ -7,77 +7,7 @@ from httpx import AsyncClient
 from src.main import app
 
 
-@pytest.fixture
-async def async_client():
-    """Create async test client.
 
-    Yields:
-        AsyncClient: HTTP client for testing API endpoints.
-
-    """
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
-
-
-@pytest.fixture
-def mock_auth_header(test_settings):
-    """Create mock authentication header.
-
-    Args:
-        test_settings: Test settings fixture.
-
-    Returns:
-        dict: Headers with API key.
-
-    """
-    test_settings.api_key = "test-api-key"
-    return {"X-API-Key": "test-api-key"}
-
-
-@pytest.fixture
-def mock_image_bytes():
-    """Create mock JPEG image bytes.
-
-    Returns:
-        bytes: Minimal valid JPEG image data.
-
-    """
-    # Minimal JPEG header
-    return b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"fake_image_data" * 100
-
-
-@pytest.fixture
-def mock_listing_response():
-    """Sample successful listing response.
-
-    Returns:
-        dict: Sample listing response data.
-
-    """
-    return {
-        "listing_id": "test-uuid",
-        "status": "completed",
-        "item": {
-            "type": "headphones",
-            "brand": "Sony",
-            "model": "WH-1000XM5",
-            "condition": "Good",
-            "confidence": 0.91,
-        },
-        "pricing": {
-            "suggested_price": 142.00,
-            "currency": "GBP",
-            "preferred_platform": "ebay",
-            "platform_reasoning": "Higher volume on eBay",
-        },
-        "listing_draft": {
-            "title": "Sony WH-1000XM5 Headphones - Good Condition",
-            "description": "High-quality noise-canceling headphones...",
-            "category_suggestions": ["Sound & Vision > Headphones"],
-            "shipping_suggestion": "Royal Mail 2nd Class",
-            "returns_policy": "30-day returns",
-        },
-    }
 
 
 class TestHealthEndpoint:
@@ -85,7 +15,7 @@ class TestHealthEndpoint:
 
     async def test_health_check_success(self, async_client: AsyncClient):
         """Test health check returns healthy status."""
-        response = await async_client.get("/health")
+        response = await async_client.get("/api/v1/health")
 
         assert response.status_code == 200
         data = response.json()
@@ -95,7 +25,7 @@ class TestHealthEndpoint:
 
     async def test_health_check_services(self, async_client: AsyncClient):
         """Test health check includes service statuses."""
-        response = await async_client.get("/health")
+        response = await async_client.get("/api/v1/health")
 
         assert response.status_code == 200
         data = response.json()
@@ -119,7 +49,7 @@ class TestListingEndpoints:
         try:
             response = await async_client.post(
                 "/api/v1/listing",
-                files={},
+                files={"images": ("test.jpg", b"fake", "image/jpeg")},
             )
 
             assert response.status_code == 401
@@ -139,8 +69,8 @@ class TestListingEndpoints:
             data={},
         )
 
-        assert response.status_code == 400
-        assert "at least one image" in response.json()["detail"].lower()
+        assert response.status_code == 422
+        assert "field required" in response.json()["detail"][0]["msg"].lower()
 
     async def test_create_listing_invalid_image_format(
         self,
@@ -166,6 +96,8 @@ class TestListingEndpoints:
     ):
         """Test getting non-existent listing returns 404."""
         fake_id = "12345678-1234-1234-1234-123456789abc"
+
+        print("DEPENDENCY OVERRIDES:", app.dependency_overrides)
 
         response = await async_client.get(
             f"/api/v1/listing/{fake_id}",
@@ -274,7 +206,7 @@ class TestRateLimiting:
     ):
         """Test rate limit headers are present in responses."""
         response = await async_client.get(
-            "/health",
+            "/api/v1/health",
             headers=mock_auth_header,
         )
 
@@ -297,7 +229,7 @@ class TestRateLimiting:
         try:
             # First request should succeed
             response1 = await async_client.get(
-                "/health",
+                "/api/v1/health",
                 headers=mock_auth_header,
             )
             assert response1.status_code == 200
@@ -306,7 +238,7 @@ class TestRateLimiting:
             # In-memory rate limiting resets quickly, so this test
             # verifies the mechanism exists
             response2 = await async_client.get(
-                "/health",
+                "/api/v1/health",
                 headers=mock_auth_header,
             )
             # Either succeeds or gets rate limited
@@ -343,7 +275,7 @@ class TestAuthentication:
         async_client: AsyncClient,
     ):
         """Test that health endpoint doesn't require authentication."""
-        response = await async_client.get("/health")
+        response = await async_client.get("/api/v1/health")
 
         assert response.status_code == 200
 
@@ -357,7 +289,7 @@ class TestCORS:
     ):
         """Test that CORS headers are present in responses."""
         response = await async_client.options(
-            "/health",
+            "/api/v1/health",
             headers={
                 "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "GET",

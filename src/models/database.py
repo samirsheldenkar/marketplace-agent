@@ -11,12 +11,17 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
+
+JSONVariant = JSON().with_variant(PG_JSONB, "postgresql")
+
 
 
 class ListingStatus(enum.StrEnum):
@@ -67,7 +72,7 @@ class Listing(Base):
     condition = Column(String(20))
     condition_notes = Column(Text)
     confidence = Column(Float)
-    accessories_included = Column(JSONB, default=list)
+    accessories_included = Column(JSONVariant, default=list)
 
     # Pricing
     suggested_price = Column(Numeric(10, 2))
@@ -77,13 +82,13 @@ class Listing(Base):
     # Generated content
     title = Column(String(200))
     description = Column(Text)
-    listing_draft = Column(JSONB)
+    listing_draft = Column(JSONVariant)
 
     # Full state snapshot
-    raw_state = Column(JSONB)
+    raw_state = Column(JSONVariant)
 
     # Image paths
-    image_paths = Column(JSONB, default=list)
+    image_paths = Column(JSONVariant, default=list)
 
     # Relationships
     scrape_runs = relationship(
@@ -107,8 +112,8 @@ class ScrapeRun(Base):
     )
     source = Column(String(10), nullable=False)  # "ebay" or "vinted"
     query_string = Column(Text, nullable=False)
-    stats = Column(JSONB)
-    raw_items = Column(JSONB)
+    stats = Column(JSONVariant)
+    raw_items = Column(JSONVariant)
     item_count = Column(Integer)
     duration_ms = Column(Integer)
     error_message = Column(Text)
@@ -137,11 +142,11 @@ class AgentRun(Base):
     )
     completed_at = Column(DateTime(timezone=True))
     status = Column(String(20), default="running")
-    input_summary = Column(JSONB)
-    output_summary = Column(JSONB)
+    input_summary = Column(JSONVariant)
+    output_summary = Column(JSONVariant)
     error_message = Column(Text)
     llm_model_used = Column(String(100))
-    token_usage = Column(JSONB)
+    token_usage = Column(JSONVariant)
 
     # Relationships
     listing = relationship("Listing", back_populates="agent_runs")

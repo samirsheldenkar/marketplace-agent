@@ -190,7 +190,7 @@ The Marketplace Listing Agent uses a **state machine architecture** powered by L
 The agent maintains state throughout the workflow using the `ListState` TypedDict:
 
 ```python
-class ListState(TypedDict, total=False):
+class ListState(TypedDict):
     # Control
     run_id: str                    # Unique listing ID
     messages: list[Any]            # Conversation history
@@ -223,13 +223,15 @@ class ListState(TypedDict, total=False):
     fast_sale: bool                # User preference
     
     # Output
-    listing_draft: ListingDraft | None
+    listing_draft: NotRequired[ListingDraft | None]
     
     # Control flow
     needs_clarification: bool
-    clarification_question: str | None
-    error_state: str | None
-    retry_count: Annotated[int, operator.add]
+    clarification_question: NotRequired[str | None]
+    ebay_error: NotRequired[str | None]
+    vinted_error: NotRequired[str | None]
+    quality_retry_count: Annotated[int, operator.add]
+    clarification_count: Annotated[int, operator.add]
 ```
 
 ## Example Workflow Walkthrough

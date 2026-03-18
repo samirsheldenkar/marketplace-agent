@@ -18,9 +18,9 @@ All environment variables use the prefix `MARKETPLACE_`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MARKETPLACE_DATABASE_URL` | `postgresql://localhost:5432/marketplace` | PostgreSQL connection string |
-| `MARKETPLACE_POOL_SIZE` | `5` | Connection pool size |
-| `MARKETPLACE_MAX_OVERFLOW` | `10` | Maximum overflow connections |
+| `MARKETPLACE_DATABASE_URL` | `postgresql+asyncpg://localhost:5432/marketplace` | PostgreSQL connection string |
+| `MARKETPLACE_DATABASE_POOL_SIZE` | `5` | Connection pool size |
+| `MARKETPLACE_DATABASE_MAX_OVERFLOW` | `10` | Maximum overflow connections |
 
 **Examples:**
 
@@ -236,7 +236,7 @@ MARKETPLACE_VINTED_COUNTRY=FR
 |----------|---------|-------------|
 | `MARKETPLACE_MAX_IMAGE_SIZE_MB` | `10` | Maximum image file size in MB |
 | `MARKETPLACE_MAX_IMAGES_PER_LISTING` | `10` | Maximum images per listing |
-| `MARKETPLACE_ALLOWED_IMAGE_FORMATS` | `["jpg","jpeg","png","webp","gif"]` | Allowed formats |
+| `MARKETPLACE_ALLOWED_IMAGE_FORMATS` | `["jpg","jpeg","png","webp","heic"]` | Allowed formats |
 
 **Examples:**
 
@@ -255,7 +255,7 @@ MARKETPLACE_ALLOWED_IMAGE_FORMATS=["jpg","png"]
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MARKETPLACE_IMAGE_STORAGE_PATH` | `/tmp/marketplace_images` | Path for storing images |
+| `MARKETPLACE_IMAGE_STORAGE_PATH` | `/data/images` | Path for storing images |
 
 **Examples:**
 
@@ -488,8 +488,8 @@ MARKETPLACE_VINTED_COUNTRY=GB
 # Image Handling
 MARKETPLACE_MAX_IMAGE_SIZE_MB=10
 MARKETPLACE_MAX_IMAGES_PER_LISTING=10
-MARKETPLACE_ALLOWED_IMAGE_FORMATS=["jpg","jpeg","png","webp","gif"]
-MARKETPLACE_IMAGE_STORAGE_PATH=/tmp/marketplace_images
+MARKETPLACE_ALLOWED_IMAGE_FORMATS=["jpg","jpeg","png","webp","heic"]
+MARKETPLACE_IMAGE_STORAGE_PATH=/data/images
 
 # Cost Controls
 MARKETPLACE_MAX_TOKENS_PER_LISTING=8000

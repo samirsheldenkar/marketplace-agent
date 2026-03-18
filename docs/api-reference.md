@@ -49,7 +49,7 @@ GET /health
       "status": "healthy"
     }
   },
-  "version": "0.1.0"
+  "version": "1.0.0"
 }
 ```
 
@@ -66,7 +66,7 @@ GET /health
       "error": "Connection timeout"
     }
   },
-  "version": "0.1.0"
+  "version": "1.0.0"
 }
 ```
 
@@ -190,7 +190,7 @@ When the agent needs more information:
 **400 Bad Request - Invalid Image**:
 ```json
 {
-  "detail": "Invalid image format. Allowed: jpg, jpeg, png, webp, gif"
+  "detail": "Invalid image format. Allowed: jpg, jpeg, png, webp, heic"
 }
 ```
 

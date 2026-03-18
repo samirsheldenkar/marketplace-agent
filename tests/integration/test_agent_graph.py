@@ -149,7 +149,7 @@ class TestAgentGraphRouting:
         }
 
         result = route_after_quality(state)
-        assert result == "END"
+        assert result == "__end__"
 
     def test_route_after_quality_passed(self):
         """Test routing when quality check passes."""
@@ -162,7 +162,7 @@ class TestAgentGraphRouting:
         }
 
         result = route_after_quality(state)
-        assert result == "END"
+        assert result == "__end__"
 
 
 class TestAgentGraphNodes:

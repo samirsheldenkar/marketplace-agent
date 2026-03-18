@@ -6,6 +6,14 @@ from io import BytesIO
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import os
+# Set environment variables for tests before Settings are loaded by any imports
+os.environ["MARKETPLACE_IMAGE_STORAGE_PATH"] = "/tmp/test_images"
+os.environ["MARKETPLACE_DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["MARKETPLACE_API_KEY"] = "test-api-key"
+os.environ["MARKETPLACE_LITELLM_API_KEY"] = "test-litellm-key"
+os.environ["MARKETPLACE_APIFY_API_TOKEN"] = "test-apify-token"
+
 import pytest
 from fastapi import UploadFile
 from httpx import AsyncClient
@@ -19,6 +27,7 @@ from src.models.state import ListState
 
 # Test database URL (SQLite in-memory for tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
 
 
 @pytest.fixture(scope="session")
@@ -222,8 +231,9 @@ def sample_state() -> ListState:
         },
         needs_clarification=False,
         clarification_question=None,
+        quality_retry_count=0,
+        clarification_count=0,
         error_state=None,
-        retry_count=0,
     )
 
 
@@ -436,15 +446,26 @@ def sample_image_paths(temp_image_dir: str) -> list[str]:
 
 
 @pytest.fixture
-async def async_client():
+async def async_client(test_settings, db_session):
     """Create async test client for integration tests.
 
     Yields:
         AsyncClient: HTTP client for testing API endpoints.
 
     """
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    from httpx import ASGITransport
+    from src.config import get_settings
+    from src.db.session import get_db
+
+    # Override dependencies
+    app.dependency_overrides[get_settings] = lambda: test_settings
+    app.dependency_overrides[get_db] = lambda: db_session
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
+
+    # Clear overrides
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
