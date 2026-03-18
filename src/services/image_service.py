@@ -12,7 +12,7 @@ from src.exceptions import ImageProcessingError, ValidationError
 class ImageService:
     """Service for handling image uploads and storage."""
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings) -> None:
         """Initialize image service.
 
         Args:
@@ -48,8 +48,7 @@ class ImageService:
         max_bytes = self.settings.max_image_size_mb * 1024 * 1024
         if len(content) > max_bytes:
             raise ValidationError(
-                f"Image too large: {len(content)} bytes. "
-                f"Max: {max_bytes} bytes"
+                f"Image too large: {len(content)} bytes. Max: {max_bytes} bytes"
             )
 
     async def store_images(
@@ -89,12 +88,12 @@ class ImageService:
 
                 # Read and save file
                 content = await file.read()
-                with open(file_path, "wb") as f:
+                with open(file_path, "wb") as f:  # noqa: ASYNC230
                     f.write(content)
 
                 stored_paths.append(str(file_path))
 
-            except Exception as e:
-                raise ImageProcessingError(f"Failed to store image: {e!s}")
+            except OSError as e:
+                raise ImageProcessingError(f"Failed to store image: {e!s}") from e
 
         return stored_paths

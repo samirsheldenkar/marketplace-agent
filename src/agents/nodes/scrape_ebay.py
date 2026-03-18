@@ -86,10 +86,9 @@ async def scrape_ebay(state: ListState) -> dict:
 
     except Exception as e:
         # Log error but continue gracefully - agent can use Vinted only
-        logger.error(
+        logger.exception(
             "eBay scraper encountered an error",
             query=query,
-            error=str(e),
             run_id=state.get("run_id"),
         )
         return {

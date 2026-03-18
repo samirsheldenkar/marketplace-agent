@@ -49,9 +49,9 @@ def _build_price_research_summary(state: ListState) -> str:
         )
         lines.append(f"  - Average price: £{ebay_stats.get('avg_price', 0):.2f}")
         lines.append(f"  - Median price: £{ebay_stats.get('median_price', 0):.2f}")
-        lines.append(
-            f"  - Price range: £{ebay_stats.get('min_price', 0):.2f} - £{ebay_stats.get('max_price', 0):.2f}"
-        )
+        min_price = ebay_stats.get("min_price", 0)
+        max_price = ebay_stats.get("max_price", 0)
+        lines.append(f"  - Price range: £{min_price:.2f} - £{max_price:.2f}")
 
     # Vinted price research
     vinted_stats = state.get("vinted_price_stats")
@@ -62,14 +62,24 @@ def _build_price_research_summary(state: ListState) -> str:
         )
         lines.append(f"  - Average price: £{vinted_stats.get('avg_price', 0):.2f}")
         lines.append(f"  - Median price: £{vinted_stats.get('median_price', 0):.2f}")
-        lines.append(
-            f"  - Price range: £{vinted_stats.get('min_price', 0):.2f} - £{vinted_stats.get('max_price', 0):.2f}"
-        )
+        min_price = vinted_stats.get("min_price", 0)
+        max_price = vinted_stats.get("max_price", 0)
+        lines.append(f"  - Price range: £{min_price:.2f} - £{max_price:.2f}")
 
     if not lines:
         return "No price research data available."
 
     return "\n".join(lines)
+
+
+def _raise_unexpected_type() -> None:
+    """Raise LLMError for unexpected response type.
+
+    Raises:
+        LLMError: Always raised with appropriate message.
+
+    """
+    raise LLMError("Unexpected response type from LLM")
 
 
 def _format_optional(value: Any, default: str = "Not specified") -> str:
@@ -150,7 +160,7 @@ async def _call_llm_with_retry(
                 result_dict = json.loads(content_text)
                 result = ListingDraftResult(**result_dict)
             else:
-                raise LLMError("Unexpected response type from LLM")
+                _raise_unexpected_type()
 
             logger.info(
                 "Listing draft generated successfully",
@@ -169,7 +179,7 @@ async def _call_llm_with_retry(
                 "Failed to parse LLM response as JSON",
                 extra={"attempt": attempt + 1, "error": str(e)},
             )
-        except Exception as e:
+        except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
                 "LLM call failed",
@@ -179,7 +189,7 @@ async def _call_llm_with_retry(
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug(f"Retrying in {delay}s...")
+            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted

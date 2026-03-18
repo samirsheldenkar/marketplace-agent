@@ -1,6 +1,5 @@
 """Agent reasoning prompts."""
 
-
 from pydantic import BaseModel, Field
 
 REASONING_SYSTEM = """You are an expert marketplace listing analyst specializing in item identification and search optimization.

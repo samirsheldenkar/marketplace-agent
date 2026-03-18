@@ -1,6 +1,5 @@
 """Clarification prompts for generating targeted questions when confidence is low."""
 
-
 from pydantic import BaseModel, Field
 
 CLARIFICATION_SYSTEM = """You are a helpful marketplace listing assistant. Your role is to review item attributes and confidence scores to determine if clarification is needed.

@@ -19,7 +19,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
-class ListingStatus(str, enum.Enum):
+class ListingStatus(enum.StrEnum):
     """Listing processing status."""
 
     PENDING = "pending"
@@ -33,14 +33,14 @@ class Base(DeclarativeBase):
     """Base class for all models."""
 
 
-
 class Listing(Base):
     """Listing model for storing item information and generated drafts."""
 
     __tablename__ = "listings"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending', 'processing', 'clarification', 'completed', 'failed')",
+            "status IN ('pending', 'processing', 'clarification', "
+            "'completed', 'failed')",
             name="check_listing_status",
         ),
     )

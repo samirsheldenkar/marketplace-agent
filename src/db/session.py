@@ -1,5 +1,7 @@
 """Database session management."""
 
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -23,7 +25,7 @@ AsyncSessionLocal = sessionmaker(
 )
 
 
-async def get_db():
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Get database session dependency."""
     async with AsyncSessionLocal() as session:
         try:
@@ -32,9 +34,8 @@ async def get_db():
             await session.close()
 
 
-async def init_db():
+async def init_db() -> None:
     """Initialize database tables."""
-    async with engine.begin() as conn:
+    async with engine.begin():
         # In production, use Alembic migrations instead
-        # await conn.run_sync(Base.metadata.create_all)
         pass

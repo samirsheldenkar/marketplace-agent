@@ -3,7 +3,6 @@
 This LangGraph node calls the Vinted scraper tool and stores results in state.
 """
 
-
 import structlog
 
 from src.config import get_settings
@@ -79,11 +78,10 @@ async def scrape_vinted(state: ListState) -> dict:
         }
 
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Vinted scraper node failed unexpectedly",
             query=query,
             error=str(e),
-            exc_info=True,
         )
         return {
             "vinted_price_stats": None,

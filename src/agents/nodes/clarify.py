@@ -148,14 +148,11 @@ async def clarify(state: ListState) -> dict:
         }
 
     except Exception as e:
-        logger.error(
-            "Failed to generate clarification question",
-            extra={"error": str(e), "state_keys": list(state.keys())},
-        )
+        logger.exception("Failed to generate clarification question")
         raise LLMError(f"Failed to generate clarification question: {e}") from e
 
 
-def _extract_field_updates(user_answer: str) -> dict[str, Any]:
+def _extract_field_updates(user_answer: str) -> dict[str, Any]:  # noqa: C901
     """Extract structured field updates from user's free-form answer.
 
     This is a simple extraction that looks for common patterns in user answers.

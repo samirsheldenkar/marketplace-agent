@@ -101,6 +101,8 @@ ignore = [
     "PTH123",   # `open()` should be replaced by `Path.open()`
     "PTH207",   # Replace `glob` with `Path.glob` or `Path.rglob`
     "S101",     # Use of assert detected
+    "S104",     # Possible binding to all interfaces (config default)
+    "S108",     # Probable insecure usage of temporary file (config default)
     "TRY003",   # Avoid specifying long messages outside the exception class
     "TRY300",   # Consider moving statement into `else` block
 ]
@@ -111,6 +113,20 @@ ignore = [
     "ARG001",   # Unused function argument
     "PLR2004",  # Magic value used in comparison
     "S101",     # Use of assert detected
+]
+"alembic/*" = [
+    "INP001",   # Implicit namespace package
+    "D400",     # First line should end with a period
+    "D415",     # First line should end with period, question mark, or exclamation point
+    "E501",     # Line too long (SQL statements)
+]
+"src/agents/prompts/*" = [
+    "E501",     # Line too long (prompt strings)
+    "D400",     # Docstring first line
+    "D415",     # Docstring punctuation
+]
+"n8n/*" = [
+    "ALL",      # Ignore all linting for n8n workflow files
 ]
 
 [tool.ruff.lint.isort]

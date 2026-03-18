@@ -27,7 +27,12 @@ MAX_RETRIES = 3
 RETRY_DELAYS = [1, 2, 4]  # Exponential backoff in seconds
 
 
-async def agent_reasoning(state: ListState) -> dict[str, Any]:
+def _raise_unexpected_type() -> None:
+    """Raise LLMError for unexpected response type."""
+    raise LLMError("Unexpected response type from LLM")
+
+
+async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PLR0912, PLR0915
     """Analyze item information and build optimized search queries.
 
     This node merges image analysis results with user-provided metadata,
@@ -134,7 +139,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:
                 result_dict = json.loads(content_text)
                 result = ReasoningResult(**result_dict)
             else:
-                raise LLMError("Unexpected response type from LLM")
+                _raise_unexpected_type()
 
             # Build response state updates
             updates: dict[str, Any] = {
@@ -170,7 +175,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:
                 "Failed to parse LLM response as JSON",
                 extra={"attempt": attempt + 1, "error": str(e)},
             )
-        except Exception as e:
+        except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
                 "LLM call failed",
@@ -180,7 +185,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug(f"Retrying in {delay}s...")
+            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted

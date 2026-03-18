@@ -4,7 +4,6 @@ This module contains prompts for the drafting model (Ollama/Llama 3) to generate
 compelling, SEO-optimized listing content for eBay and Vinted platforms.
 """
 
-
 from pydantic import BaseModel, Field
 
 WRITER_SYSTEM = """You are an expert marketplace copywriter specializing in eBay and Vinted listings for the UK market. Your role is to create compelling, SEO-optimized listing content that drives sales while maintaining honesty and accuracy.

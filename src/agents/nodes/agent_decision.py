@@ -47,6 +47,18 @@ def _format_price_stats(stats: PriceStats | None) -> str:
 - Price range: £{stats["min_price"]:.2f} - £{stats["max_price"]:.2f}"""
 
 
+def _raise_unexpected_type() -> None:
+    """Raise LLMError for unexpected response type.
+
+    This helper function abstracts the raise statement to satisfy TRY301.
+
+    Raises:
+        LLMError: Always raised with unexpected response type message.
+
+    """
+    raise LLMError("Unexpected response type from LLM")
+
+
 async def agent_decision(state: ListState) -> dict[str, Any]:
     """Analyze price statistics and determine suggested price and preferred platform.
 
@@ -92,7 +104,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
 
     # Calculate base price and platform using PricingService
     pricing_service = PricingService(settings)
-    calculated_price, calculated_platform = pricing_service.calculate_suggested_price(
+    _calculated_price, _calculated_platform = pricing_service.calculate_suggested_price(
         ebay_stats, vinted_stats, fast_sale=fast_sale
     )
 
@@ -145,13 +157,15 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
                 result_dict = json.loads(content_text)
                 result = PricingDecision(**result_dict)
             else:
-                raise LLMError("Unexpected response type from LLM")
+                raise _raise_unexpected_type()
 
             # Build response state updates
             updates: dict[str, Any] = {
                 "suggested_price": result.suggested_price,
                 "preferred_platform": result.preferred_platform,
-                "platform_reasoning": f"{result.platform_reasoning}\n\nPricing: {result.price_reasoning}",
+                "platform_reasoning": (
+                    f"{result.platform_reasoning}\n\nPricing: {result.price_reasoning}"
+                ),
             }
 
             logger.info(
@@ -172,7 +186,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
                 "Failed to parse LLM response as JSON",
                 extra={"attempt": attempt + 1, "error": str(e)},
             )
-        except Exception as e:
+        except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
                 "LLM call failed",
@@ -182,7 +196,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug(f"Retrying in {delay}s...")
+            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted

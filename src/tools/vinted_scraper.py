@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 RATE_LIMIT_SECONDS = 1.0
 
 
-def _extract_price(item: dict) -> float | None:
+def _extract_price(item: dict) -> float | None:  # noqa: C901, PLR0911
     """Extract price from a Vinted item dict.
 
     Args:
@@ -70,7 +70,7 @@ def _extract_price(item: dict) -> float | None:
 
 
 def _sync_scrape(query: str, country: str, max_results: int) -> dict:
-    """Synchronous scraping function to be run in a thread.
+    """Run synchronous scraping in a thread.
 
     Args:
         query: Search query string.
@@ -84,19 +84,18 @@ def _sync_scrape(query: str, country: str, max_results: int) -> dict:
         ScraperError: If scraping fails.
 
     """
-    from vinted_scraper import VintedScraper
+    from vinted_scraper import VintedScraper  # noqa: PLC0415
 
     base_url = f"https://www.vinted.{country.lower()}"
     scraper = VintedScraper(base_url=base_url)
 
     try:
-        result = scraper.search(params={"search_text": query, "per_page": max_results})
-        return result
+        return scraper.search(params={"search_text": query, "per_page": max_results})
     except Exception as e:
         raise ScraperError(f"Vinted scraper failed for query '{query}': {e}") from e
 
 
-async def scrape_vinted_listings(
+async def scrape_vinted_listings(  # noqa: C901, PLR0911
     query: str,
     country: str = "GB",
     max_results: int = 50,
@@ -203,10 +202,9 @@ async def scrape_vinted_listings(
                 logger.info("Retrying after timeout", wait_seconds=wait_time)
                 await asyncio.sleep(wait_time)
                 continue
-            logger.error(
+            logger.exception(
                 "Vinted scrape failed after max retries",
                 query=query,
-                error="timeout",
             )
             return None
 
@@ -224,19 +222,16 @@ async def scrape_vinted_listings(
                 # Ensure rate limiting between retries
                 await asyncio.sleep(max(wait_time, RATE_LIMIT_SECONDS))
                 continue
-            logger.error(
+            logger.exception(
                 "Vinted scrape failed after max retries",
                 query=query,
-                error=str(e),
             )
             return None
 
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Unexpected error during Vinted scrape",
                 query=query,
-                error=str(e),
-                exc_info=True,
             )
             return None
 

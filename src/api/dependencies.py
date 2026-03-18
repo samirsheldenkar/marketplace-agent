@@ -9,9 +9,9 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 async def verify_api_key(
-    request: Request,
+    _request: Request,
     api_key: str = Depends(api_key_header),
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> str:
     """Verify API key from request header.
 

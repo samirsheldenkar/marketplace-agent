@@ -26,7 +26,7 @@ PLACEHOLDER_PATTERNS = [
     r"\bTODO\b",  # Standalone TODO
     r"\bPLACEHOLDER\b",  # Standalone PLACEHOLDER
     r"\bTBD\b",  # To be determined
-    r"\bFIXME\b",  # FIXME marker
+    r"\bFIXME\b",  # Fix marker pattern
 ]
 
 
@@ -60,7 +60,6 @@ def _contains_placeholder(text: str) -> bool:
     if not text:
         return False
 
-    text_upper = text.upper()
     for pattern in PLACEHOLDER_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             return True

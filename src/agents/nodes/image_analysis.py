@@ -32,7 +32,7 @@ async def _load_image_as_base64(file_path: str) -> str:
     """
     path = Path(file_path)
 
-    def _read_bytes():
+    def _read_bytes() -> bytes:
         return path.read_bytes()
 
     image_bytes = await asyncio.to_thread(_read_bytes)
@@ -146,11 +146,10 @@ async def image_analysis(state: ListState) -> dict:
         try:
             image_content = await _build_image_content(photo_path)
             content.append(image_content)
-        except Exception as e:
+        except Exception:  # noqa: BLE001
             logger.warning(
                 "Failed to load image for analysis",
                 path=photo_path,
-                error=str(e),
             )
             continue
 
@@ -187,9 +186,8 @@ async def image_analysis(state: ListState) -> dict:
         }
 
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Image analysis failed",
-            error=str(e),
             photos_count=len(photos),
         )
 

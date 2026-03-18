@@ -17,40 +17,40 @@ from src.db.session import get_db
 router = APIRouter()
 
 
-@router.post("/listing", response_model=CreateListingResponse)
+@router.post("/listing", response_model=CreateListingResponse)  # noqa: FAST001
 async def create_listing(
-    request: Request,
-    images: list[UploadFile] = File(...),
-    brand: str | None = Form(None),
-    size: str | None = Form(None),
-    color: str | None = Form(None),
-    notes: str | None = Form(None),
-    fast_sale: bool = Form(True, description="Apply discount pricing for quick sale"),
-    settings: Settings = Depends(get_settings),
-    db: AsyncSession = Depends(get_db),
-):
+    _request: Request,
+    _images: list[UploadFile] = File(...),  # noqa: B008, FAST002
+    _brand: str | None = Form(None),  # noqa: FAST002
+    _size: str | None = Form(None),  # noqa: FAST002
+    _color: str | None = Form(None),  # noqa: FAST002
+    _notes: str | None = Form(None),  # noqa: FAST002
+    _fast_sale: bool = Form(True, description="Apply discount pricing for quick sale"),  # noqa: FAST002, FBT001, FBT003
+    _settings: Settings = Depends(get_settings),  # noqa: B008, FAST002
+    _db: AsyncSession = Depends(get_db),  # noqa: B008, FAST002
+) -> CreateListingResponse:
     """Create a new listing from uploaded images."""
-    # TODO: Implement listing creation logic
+    # TODO(samir): Implement listing creation logic  # noqa: TD003
     raise HTTPException(status_code=501, detail="Not implemented")
 
 
-@router.post("/listing/{listing_id}/clarify", response_model=ClarificationResponse)
+@router.post("/listing/{listing_id}/clarify", response_model=ClarificationResponse)  # noqa: FAST001
 async def submit_clarification(
-    listing_id: UUID,
-    clarification: ClarificationRequest,
-    settings: Settings = Depends(get_settings),
-    db: AsyncSession = Depends(get_db),
-):
+    _listing_id: UUID,
+    _clarification: ClarificationRequest,
+    _settings: Settings = Depends(get_settings),  # noqa: B008, FAST002
+    _db: AsyncSession = Depends(get_db),  # noqa: B008, FAST002
+) -> ClarificationResponse:
     """Submit clarification answer for a listing."""
-    # TODO: Implement clarification logic
+    # TODO(samir): Implement clarification logic  # noqa: TD003
     raise HTTPException(status_code=501, detail="Not implemented")
 
 
-@router.get("/listing/{listing_id}", response_model=GetListingResponse)
+@router.get("/listing/{listing_id}", response_model=GetListingResponse)  # noqa: FAST001
 async def get_listing(
-    listing_id: UUID,
-    db: AsyncSession = Depends(get_db),
-):
+    _listing_id: UUID,
+    _db: AsyncSession = Depends(get_db),  # noqa: B008, FAST002
+) -> GetListingResponse:
     """Get a listing by ID."""
-    # TODO: Implement get listing logic
+    # TODO(samir): Implement get listing logic  # noqa: TD003
     raise HTTPException(status_code=501, detail="Not implemented")

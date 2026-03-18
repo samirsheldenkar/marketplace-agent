@@ -22,7 +22,7 @@ MAX_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 2
 
 
-async def scrape_ebay_sold_listings(
+async def scrape_ebay_sold_listings(  # noqa: C901, PLR0911
     query: str,
     country: str = "GB",
     max_results: int = 50,
@@ -141,10 +141,9 @@ async def scrape_ebay_sold_listings(
             if attempt < MAX_RETRIES:
                 await asyncio.sleep(RETRY_BACKOFF_SECONDS)
                 continue
-            logger.error(
+            logger.exception(
                 "eBay scraper failed after retries",
                 query=query,
-                error="timeout",
             )
             return None
 
@@ -159,7 +158,7 @@ async def scrape_ebay_sold_listings(
             if attempt < MAX_RETRIES and _is_retryable_error(e.response.status_code):
                 await asyncio.sleep(RETRY_BACKOFF_SECONDS)
                 continue
-            logger.error(
+            logger.exception(
                 "eBay scraper failed with HTTP error",
                 query=query,
                 status_code=e.response.status_code,
@@ -176,10 +175,9 @@ async def scrape_ebay_sold_listings(
             if attempt < MAX_RETRIES:
                 await asyncio.sleep(RETRY_BACKOFF_SECONDS)
                 continue
-            logger.error(
+            logger.exception(
                 "eBay scraper failed after retries",
                 query=query,
-                error="request_error",
             )
             return None
 

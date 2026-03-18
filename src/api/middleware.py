@@ -1,17 +1,21 @@
 """FastAPI middleware configuration."""
 
 import time
+from collections.abc import Awaitable, Callable
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 
 class RequestTimingMiddleware(BaseHTTPMiddleware):
     """Middleware to log request timing."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """Process request and log timing."""
         start_time = time.time()
         response = await call_next(request)
@@ -20,7 +24,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def setup_middleware(app):
+def setup_middleware(app: FastAPI) -> None:
     """Configure all middleware for the FastAPI app.
 
     Args:

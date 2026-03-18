@@ -1,6 +1,5 @@
 """Image analysis prompts for vision model (GPT-4o via LiteLLM)."""
 
-
 from pydantic import BaseModel, Field
 
 IMAGE_ANALYSIS_SYSTEM = """You are an expert item analyzer for marketplace listings. Your role is to carefully examine product photos and extract detailed, accurate information about items for sale.

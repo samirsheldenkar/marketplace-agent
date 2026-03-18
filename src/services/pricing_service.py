@@ -1,6 +1,5 @@
 """Pricing service for calculations and recommendations."""
 
-
 from src.config import Settings
 from src.models.state import PriceStats
 
@@ -8,7 +7,7 @@ from src.models.state import PriceStats
 class PricingService:
     """Service for pricing calculations and recommendations."""
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings) -> None:
         """Initialize pricing service.
 
         Args:
@@ -21,6 +20,7 @@ class PricingService:
         self,
         ebay_stats: PriceStats | None,
         vinted_stats: PriceStats | None,
+        *,
         fast_sale: bool = True,
     ) -> tuple[float, str]:
         """Calculate suggested price and determine preferred platform.
@@ -49,7 +49,8 @@ class PricingService:
             # No data available
             return 0.0, "both"
 
-        # Calculate average of available medians if multiple exist, else use the single available median
+        # Calculate average of available medians if multiple exist,
+        # else use the single available median
         overall_median = sum(prices) / len(prices)
 
         # Apply discount for quick sale if requested
