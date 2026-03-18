@@ -5,10 +5,9 @@ the optimal listing price and preferred platform using LLM reasoning.
 """
 
 import asyncio
-import json
-import logging
 from typing import Any
 
+import structlog
 from langchain_openai import ChatOpenAI
 
 from src.agents.prompts.decision import (
@@ -21,7 +20,8 @@ from src.exceptions import LLMError
 from src.models.state import ListState, PriceStats
 from src.services.pricing_service import PricingService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
+
 
 # Retry configuration
 MAX_RETRIES = 3
@@ -47,18 +47,6 @@ def _format_price_stats(stats: PriceStats | None) -> str:
 - Price range: £{stats["min_price"]:.2f} - £{stats["max_price"]:.2f}"""
 
 
-def _raise_unexpected_type() -> None:
-    """Raise LLMError for unexpected response type.
-
-    This helper function abstracts the raise statement to satisfy TRY301.
-
-    Raises:
-        LLMError: Always raised with unexpected response type message.
-
-    """
-    raise LLMError("Unexpected response type from LLM")
-
-
 async def agent_decision(state: ListState) -> dict[str, Any]:
     """Analyze price statistics and determine suggested price and preferred platform.
 
@@ -82,7 +70,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
     """
     settings = get_settings()
 
-    # Initialize LLM client
+    # Initialize LLM client with structured output
     llm = ChatOpenAI(
         base_url=f"{settings.litellm_url}/v1",
         model=settings.reasoning_model,
@@ -90,6 +78,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
         temperature=0.1,
         max_tokens=2048,
     )
+    structured_llm = llm.with_structured_output(PricingDecision)
 
     # Get price stats from state
     ebay_stats = state.get("ebay_price_stats")
@@ -128,38 +117,17 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
         try:
             logger.debug(
                 "Calling decision LLM",
-                extra={"attempt": attempt + 1, "max_retries": MAX_RETRIES},
+                attempt=attempt + 1,
+                max_retries=MAX_RETRIES,
             )
 
-            response = await llm.ainvoke(
+            result: PricingDecision = await structured_llm.ainvoke(
                 [
                     {"role": "system", "content": DECISION_SYSTEM},
                     {"role": "user", "content": user_prompt},
                 ]
             )
 
-            # Parse the response content
-            content = response.content
-            if isinstance(content, str):
-                # Try to extract JSON from the response
-                content_text = content.strip()
-                # Handle potential markdown code blocks
-                if content_text.startswith("```"):
-                    lines = content_text.split("\n")
-                    # Remove first and last line if they're code block markers
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                    content_text = "\n".join(lines)
-
-                # Parse JSON response
-                result_dict = json.loads(content_text)
-                result = PricingDecision(**result_dict)
-            else:
-                raise _raise_unexpected_type()
-
-            # Build response state updates
             updates: dict[str, Any] = {
                 "suggested_price": result.suggested_price,
                 "preferred_platform": result.preferred_platform,
@@ -170,36 +138,28 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
 
             logger.info(
                 "Decision completed",
-                extra={
-                    "suggested_price": result.suggested_price,
-                    "preferred_platform": result.preferred_platform,
-                    "has_ebay_stats": ebay_stats is not None,
-                    "has_vinted_stats": vinted_stats is not None,
-                },
+                suggested_price=result.suggested_price,
+                preferred_platform=result.preferred_platform,
+                has_ebay_stats=ebay_stats is not None,
+                has_vinted_stats=vinted_stats is not None,
             )
 
             return updates
 
-        except json.JSONDecodeError as e:
-            last_error = e
-            logger.warning(
-                "Failed to parse LLM response as JSON",
-                extra={"attempt": attempt + 1, "error": str(e)},
-            )
         except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
-                "LLM call failed",
-                extra={"attempt": attempt + 1, "error": str(e)},
+                "LLM decision call failed",
+                attempt=attempt + 1,
+                error=str(e),
             )
 
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted
     error_msg = f"LLM decision failed after {MAX_RETRIES} attempts"
-    logger.error(error_msg, extra={"last_error": str(last_error)})
+    logger.error(error_msg, last_error=str(last_error))
     raise LLMError(error_msg)

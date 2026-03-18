@@ -1,11 +1,11 @@
 """FastAPI route definitions."""
 
-import logging
 import uuid
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 import httpx
+import structlog
 from fastapi import (
     APIRouter,
     Depends,
@@ -19,7 +19,7 @@ from fastapi import (
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from src.agents.graph import agent_graph
 from src.api.dependencies import verify_api_key
@@ -47,7 +47,7 @@ from src.models.database import ListingStatus
 from src.models.state import ListState
 from src.services.image_service import ImageService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 router = APIRouter()
 
@@ -282,10 +282,10 @@ async def _run_agent_graph(
 async def create_listing(
     _request: Request,
     images: list[UploadFile] = File(...),
-    brand: Optional[str] = Form(None),
-    size: Optional[str] = Form(None),
-    color: Optional[str] = Form(None),
-    notes: Optional[str] = Form(None),
+    brand: str | None = Form(None),
+    size: str | None = Form(None),
+    color: str | None = Form(None),
+    notes: str | None = Form(None),
     fast_sale: bool = Form(True, description="Apply discount pricing for quick sale"),
     _api_key: str = Depends(verify_api_key),
     settings: Settings = Depends(get_settings),
@@ -378,7 +378,8 @@ async def create_listing(
 
     logger.info(
         "Created listing",
-        extra={"listing_id": str(listing.id), "image_count": len(images)},
+        listing_id=str(listing.id),
+        image_count=len(images),
     )
 
     # Run agent graph with timing
@@ -392,10 +393,10 @@ async def create_listing(
     if listing.status == ListingStatus.COMPLETED:
         return _state_to_listing_response(listing, dict(result_state))
     if listing.status == ListingStatus.CLARIFICATION:
-        # For clarification, return a response that indicates clarification needed
-        raise HTTPException(
+        # 202 Accepted — indicates the caller should submit a clarification answer
+        return JSONResponse(
             status_code=status.HTTP_202_ACCEPTED,
-            detail={
+            content={
                 "listing_id": str(listing.id),
                 "status": "clarification",
                 "clarification_question": result_state.get("clarification_question"),
@@ -624,5 +625,5 @@ async def health_check(
     return HealthResponse(
         status=overall_status,
         services=services,
-        version="1.0.0",  # TODO(samir): issue=#123 Get from package version
+        version="1.0.0",
     )

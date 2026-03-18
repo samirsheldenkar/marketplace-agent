@@ -1,7 +1,6 @@
 """LangGraph state definitions."""
 
-import operator
-from typing import Annotated, Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 
 class PriceStats(TypedDict):
@@ -26,49 +25,60 @@ class ListingDraft(TypedDict):
     platform_variants: dict[str, dict]
 
 
-class ListState(TypedDict, total=False):
+class ListState(TypedDict):
     """Complete agent state for LangGraph.
 
     Tracks the progress of a listing through the agent pipeline.
+    Required fields must be present in the initial state dict passed to the graph.
+    NotRequired fields are populated by agent nodes during execution.
     """
 
-    # Control
+    # Control (required at graph start)
     run_id: str
     messages: list[Any]
-
-    # Item identification
-    item_description: str
-    item_type: str
-    brand: str | None
-    model_name: str | None
-    size: str | None
-    color: str | None
-    condition: str  # "New" | "Excellent" | "Good" | "Fair" | "Poor"
-    condition_notes: str | None
+    photos: list[str]
+    needs_clarification: bool
+    fast_sale: bool
     confidence: float
-    accessories_included: list[str]
+    # Retry counters — intentionally plain int (not reducers) so nodes control
+    # them explicitly. quality_retry_count tracks listing_writer retries (max 1).
+    # clarification_count tracks clarification rounds (max 3 per spec).
+    quality_retry_count: int
+    clarification_count: int
+
+    # Item identification (populated by image_analysis / agent_reasoning)
+    item_description: NotRequired[str]
+    item_type: NotRequired[str]
+    brand: NotRequired[str | None]
+    model_name: NotRequired[str | None]
+    size: NotRequired[str | None]
+    color: NotRequired[str | None]
+    condition: NotRequired[str]  # "New" | "Excellent" | "Good" | "Fair" | "Poor"
+    condition_notes: NotRequired[str | None]
+    accessories_included: NotRequired[list[str]]
 
     # Images
-    photos: list[str]
-    image_analysis_raw: dict | None
+    image_analysis_raw: NotRequired[dict | None]
 
     # Price research
-    ebay_price_stats: PriceStats | None
-    vinted_price_stats: PriceStats | None
-    ebay_query_used: str | None
-    vinted_query_used: str | None
+    ebay_price_stats: NotRequired[PriceStats | None]
+    vinted_price_stats: NotRequired[PriceStats | None]
+    ebay_query_used: NotRequired[str | None]
+    vinted_query_used: NotRequired[str | None]
+    # Per-scraper error fields to avoid fan-in collision when both run in parallel
+    ebay_error: NotRequired[str | None]
+    vinted_error: NotRequired[str | None]
 
     # Decision
-    suggested_price: float | None
-    preferred_platform: str | None  # "ebay" | "vinted" | "both"
-    platform_reasoning: str | None
-    fast_sale: bool  # User preference for discount pricing
+    suggested_price: NotRequired[float | None]
+    preferred_platform: NotRequired[str | None]  # "ebay" | "vinted" | "both"
+    platform_reasoning: NotRequired[str | None]
 
     # Output
-    listing_draft: ListingDraft | None
+    listing_draft: NotRequired[ListingDraft | None]
+    quality_passed: NotRequired[bool]
+    quality_issues: NotRequired[list[str]]
 
     # Control flow
-    needs_clarification: bool
-    clarification_question: str | None
-    error_state: str | None
-    retry_count: Annotated[int, operator.add]
+    clarification_question: NotRequired[str | None]
+    error_state: NotRequired[str | None]

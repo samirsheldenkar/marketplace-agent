@@ -227,21 +227,13 @@ setup_middleware(app)
 app.include_router(router, prefix="/api/v1")
 
 
-@app.get("/health")
-async def health_check(request: Request) -> dict[str, Any]:
-    """Health check endpoint with structured logging.
+@app.get("/health", include_in_schema=False)
+async def health_check_redirect() -> Response:
+    """Shallow health check for Docker / load-balancer probes.
 
     Returns:
-        Health status dictionary with version info.
+        Plain 200 OK so Docker healthcheck passes quickly.
+        For the full service-level health check use GET /api/v1/health.
 
     """
-    logger.info(
-        "health_check_requested",
-        client_host=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
-    )
-
-    return {
-        "status": "healthy",
-        "version": "0.1.0",
-    }
+    return Response(content='{"status":"ok"}', media_type="application/json")

@@ -44,7 +44,7 @@ CLARIFICATION_USER = """Review the following item information and determine if c
 - Confidence Score: {confidence:.2f}
 
 **Analysis Required:**
-1. Is the confidence score below the threshold (typically < 0.85)?
+1. Is the confidence score below the threshold (typically < 0.70)?
 2. Are there critical missing fields for this item type?
 3. What specific information would most improve the listing quality?
 

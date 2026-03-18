@@ -2,7 +2,7 @@
 
 import time
 from collections.abc import Awaitable, Callable
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -66,7 +66,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: Any,
-        redis_client: Optional[Any] = None,
+        redis_client: Any | None = None,
         max_requests: int = 30,
         window_seconds: int = 60,
     ) -> None:
@@ -277,7 +277,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def setup_middleware(app: FastAPI, redis_client: Optional[Any] = None) -> None:
+def setup_middleware(app: FastAPI, redis_client: Any | None = None) -> None:
     """Configure all middleware for the FastAPI app.
 
     Args:
@@ -290,11 +290,12 @@ def setup_middleware(app: FastAPI, redis_client: Optional[Any] = None) -> None:
 
     settings = get_settings()
 
-    # CORS
+    # CORS — wildcard origin is incompatible with allow_credentials=True.
+    # Restrict origins in production via MARKETPLACE_CORS_ORIGINS env var.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )

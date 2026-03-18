@@ -6,10 +6,9 @@ to the reasoning model if needed.
 """
 
 import asyncio
-import json
-import logging
 from typing import Any
 
+import structlog
 from langchain_openai import ChatOpenAI
 
 from src.agents.prompts.listing_writer import (
@@ -21,7 +20,7 @@ from src.config import get_settings
 from src.exceptions import LLMError
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Retry configuration
 MAX_RETRIES = 3
@@ -72,16 +71,6 @@ def _build_price_research_summary(state: ListState) -> str:
     return "\n".join(lines)
 
 
-def _raise_unexpected_type() -> None:
-    """Raise LLMError for unexpected response type.
-
-    Raises:
-        LLMError: Always raised with appropriate message.
-
-    """
-    raise LLMError("Unexpected response type from LLM")
-
-
 def _format_optional(value: Any, default: str = "Not specified") -> str:
     """Format an optional value for display.
 
@@ -106,7 +95,7 @@ async def _call_llm_with_retry(
     user_prompt: str,
     model_name: str,
 ) -> ListingDraftResult:
-    """Call LLM with retry logic and parse response.
+    """Call LLM with structured output and retry logic.
 
     Args:
         llm: The ChatOpenAI instance to use.
@@ -121,80 +110,51 @@ async def _call_llm_with_retry(
         LLMError: If all retries fail.
 
     """
+    structured_llm = llm.with_structured_output(ListingDraftResult)
     last_error: Exception | None = None
 
     for attempt in range(MAX_RETRIES):
         try:
             logger.debug(
                 "Calling drafting LLM",
-                extra={
-                    "attempt": attempt + 1,
-                    "max_retries": MAX_RETRIES,
-                    "model": model_name,
-                },
+                attempt=attempt + 1,
+                max_retries=MAX_RETRIES,
+                model=model_name,
             )
 
-            response = await llm.ainvoke(
+            result: ListingDraftResult = await structured_llm.ainvoke(
                 [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ]
             )
 
-            # Parse the response content
-            content = response.content
-            if isinstance(content, str):
-                # Try to extract JSON from the response
-                content_text = content.strip()
-                # Handle potential markdown code blocks
-                if content_text.startswith("```"):
-                    lines = content_text.split("\n")
-                    # Remove first and last line if they're code block markers
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                    content_text = "\n".join(lines)
-
-                # Parse JSON response
-                result_dict = json.loads(content_text)
-                result = ListingDraftResult(**result_dict)
-            else:
-                _raise_unexpected_type()
-
             logger.info(
                 "Listing draft generated successfully",
-                extra={
-                    "model": model_name,
-                    "title_length": len(result.title),
-                    "description_length": len(result.description),
-                },
+                model=model_name,
+                title_length=len(result.title),
+                description_length=len(result.description),
             )
 
             return result
 
-        except json.JSONDecodeError as e:
-            last_error = e
-            logger.warning(
-                "Failed to parse LLM response as JSON",
-                extra={"attempt": attempt + 1, "error": str(e)},
-            )
         except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
-                "LLM call failed",
-                extra={"attempt": attempt + 1, "error": str(e), "model": model_name},
+                "LLM drafting call failed",
+                attempt=attempt + 1,
+                error=str(e),
+                model=model_name,
             )
 
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted
     error_msg = f"LLM listing generation failed after {MAX_RETRIES} attempts"
-    logger.error(error_msg, extra={"last_error": str(last_error)})
+    logger.error(error_msg, last_error=str(last_error))
     raise LLMError(error_msg)
 
 
@@ -286,10 +246,8 @@ async def listing_writer(state: ListState) -> dict[str, Any]:
         # Graceful degradation: fall back to reasoning model
         logger.warning(
             "Drafting model failed, falling back to reasoning model",
-            extra={
-                "drafting_model": settings.drafting_model,
-                "reasoning_model": settings.reasoning_model,
-            },
+            drafting_model=settings.drafting_model,
+            reasoning_model=settings.reasoning_model,
         )
 
         reasoning_llm = ChatOpenAI(

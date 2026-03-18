@@ -310,7 +310,7 @@ def _normalize_to_price_stats(items: list[dict], query: str) -> PriceStats:
         median_price=round(median_price, 2),
         min_price=round(min_price, 2),
         max_price=round(max_price, 2),
-        items=items,
+        items=items[:10],  # Cap at 10 sample items to save storage
     )
 
 

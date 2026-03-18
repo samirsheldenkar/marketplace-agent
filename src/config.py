@@ -49,10 +49,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Database settings
-    database_url: str = "postgresql://localhost:5432/marketplace"
-    pool_size: int = 5
-    max_overflow: int = 10
+    # Database
+    database_url: str = "postgresql+asyncpg://localhost:5432/marketplace"
+    database_pool_size: int = 5
+    database_max_overflow: int = 10
 
     # LiteLLM settings
     litellm_url: str = "http://localhost:4000"
@@ -72,8 +72,8 @@ class Settings(BaseSettings):
     # Image handling
     max_image_size_mb: int = 10
     max_images_per_listing: int = 10
-    allowed_image_formats: list[str] = ["jpg", "jpeg", "png", "webp", "gif"]
-    image_storage_path: str = "/tmp/marketplace_images"
+    allowed_image_formats: list[str] = ["jpg", "jpeg", "png", "webp", "heic"]
+    image_storage_path: str = "/data/images"
 
     # Cost controls
     max_tokens_per_listing: int = 8000

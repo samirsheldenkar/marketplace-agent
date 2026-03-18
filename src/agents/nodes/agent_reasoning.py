@@ -6,9 +6,9 @@ and builds optimized search queries for marketplace price research.
 
 import asyncio
 import json
-import logging
 from typing import Any
 
+import structlog
 from langchain_openai import ChatOpenAI
 
 from src.agents.prompts.reasoning import (
@@ -20,19 +20,14 @@ from src.config import get_settings
 from src.exceptions import LLMError
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Retry configuration
 MAX_RETRIES = 3
 RETRY_DELAYS = [1, 2, 4]  # Exponential backoff in seconds
 
 
-def _raise_unexpected_type() -> None:
-    """Raise LLMError for unexpected response type."""
-    raise LLMError("Unexpected response type from LLM")
-
-
-async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PLR0912, PLR0915
+async def agent_reasoning(state: ListState) -> dict[str, Any]:
     """Analyze item information and build optimized search queries.
 
     This node merges image analysis results with user-provided metadata,
@@ -64,7 +59,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PL
     """
     settings = get_settings()
 
-    # Initialize LLM client
+    # Initialize LLM client with structured output
     llm = ChatOpenAI(
         base_url=f"{settings.litellm_url}/v1",
         model=settings.reasoning_model,
@@ -72,6 +67,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PL
         temperature=0.1,
         max_tokens=4096,
     )
+    structured_llm = llm.with_structured_output(ReasoningResult)
 
     # Extract image analysis data from state
     image_analysis = state.get("image_analysis_raw") or {}
@@ -96,7 +92,6 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PL
         user_metadata["notes"] = item_description
 
     # Format prompts
-    system_prompt = REASONING_SYSTEM
     user_prompt = REASONING_USER.format(
         image_analysis=json.dumps(image_analysis, indent=2),
         user_metadata=json.dumps(user_metadata, indent=2)
@@ -110,38 +105,17 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PL
         try:
             logger.debug(
                 "Calling reasoning LLM",
-                extra={"attempt": attempt + 1, "max_retries": MAX_RETRIES},
+                attempt=attempt + 1,
+                max_retries=MAX_RETRIES,
             )
 
-            response = await llm.ainvoke(
+            result: ReasoningResult = await structured_llm.ainvoke(
                 [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": REASONING_SYSTEM},
                     {"role": "user", "content": user_prompt},
                 ]
             )
 
-            # Parse the response content
-            content = response.content
-            if isinstance(content, str):
-                # Try to extract JSON from the response
-                content_text = content.strip()
-                # Handle potential markdown code blocks
-                if content_text.startswith("```"):
-                    lines = content_text.split("\n")
-                    # Remove first and last line if they're code block markers
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                    content_text = "\n".join(lines)
-
-                # Parse JSON response
-                result_dict = json.loads(content_text)
-                result = ReasoningResult(**result_dict)
-            else:
-                _raise_unexpected_type()
-
-            # Build response state updates
             updates: dict[str, Any] = {
                 "item_type": result.item_type,
                 "brand": result.brand,
@@ -160,35 +134,27 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:  # noqa: C901, PL
 
             logger.info(
                 "Reasoning completed",
-                extra={
-                    "item_type": result.item_type,
-                    "confidence": result.confidence,
-                    "needs_clarification": updates["needs_clarification"],
-                },
+                item_type=result.item_type,
+                confidence=result.confidence,
+                needs_clarification=updates["needs_clarification"],
             )
 
             return updates
 
-        except json.JSONDecodeError as e:
-            last_error = e
-            logger.warning(
-                "Failed to parse LLM response as JSON",
-                extra={"attempt": attempt + 1, "error": str(e)},
-            )
         except (LLMError, ValueError, TypeError) as e:
             last_error = e
             logger.warning(
-                "LLM call failed",
-                extra={"attempt": attempt + 1, "error": str(e)},
+                "LLM reasoning call failed",
+                attempt=attempt + 1,
+                error=str(e),
             )
 
         # Wait before retry (except on last attempt)
         if attempt < MAX_RETRIES - 1:
             delay = RETRY_DELAYS[attempt]
-            logger.debug("Retrying in %ss...", delay)
             await asyncio.sleep(delay)
 
     # All retries exhausted
     error_msg = f"LLM reasoning failed after {MAX_RETRIES} attempts"
-    logger.error(error_msg, extra={"last_error": str(last_error)})
+    logger.error(error_msg, last_error=str(last_error))
     raise LLMError(error_msg)

@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PriceStats(BaseModel):
@@ -53,7 +53,8 @@ class CreateListingRequest(BaseModel):
     brand: str | None = None
     size: str | None = None
     color: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(None, max_length=2000)
+    fast_sale: bool = True
 
 
 class CreateListingResponse(BaseModel):
@@ -69,7 +70,7 @@ class CreateListingResponse(BaseModel):
 class ClarificationRequest(BaseModel):
     """Request schema for clarification submission."""
 
-    answer: str
+    answer: str = Field(..., max_length=2000)
 
 
 class ClarificationResponse(BaseModel):

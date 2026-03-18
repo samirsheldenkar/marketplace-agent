@@ -5,12 +5,13 @@ against quality constraints. It checks title length, description word count,
 required fields, price reasonableness, and placeholder text detection.
 """
 
-import logging
 import re
+
+import structlog
 
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Constants for validation
 MAX_TITLE_LENGTH = 80
@@ -193,13 +194,13 @@ def _validate_price(state: ListState) -> list[str]:
 
         if suggested_price > max_reasonable_price:
             issues.append(
-                f"Price ${suggested_price:.2f} seems too high compared to "
-                f"market median ${median_price:.2f} (should be within 2x)"
+                f"Price £{suggested_price:.2f} seems too high compared to "
+                f"market median £{median_price:.2f} (should be within 2x)"
             )
         elif suggested_price < min_reasonable_price:
             issues.append(
-                f"Price ${suggested_price:.2f} seems too low compared to "
-                f"market median ${median_price:.2f} (should be at least 50% of median)"
+                f"Price £{suggested_price:.2f} seems too low compared to "
+                f"market median £{median_price:.2f} (should be at least 50% of median)"
             )
 
     return issues
@@ -277,7 +278,8 @@ def quality_check(state: ListState) -> dict:
     }
 
     if not quality_passed:
-        result["retry_count"] = 1
+        # Signal that quality_retry_count should be incremented by the graph
+        result["quality_retry_count"] = state.get("quality_retry_count", 0) + 1
 
     return result
 
@@ -289,25 +291,23 @@ def should_retry(state: ListState) -> bool:
     retry count. This is used as a conditional edge in the LangGraph workflow.
 
     Args:
-        state: Current agent state containing quality_passed and retry_count.
+        state: Current agent state containing quality_passed and quality_retry_count.
 
     Returns:
         True if we should retry listing generation, False otherwise.
 
     """
     quality_passed = state.get("quality_passed", False)
-    retry_count = state.get("retry_count", 0)
+    retry_count = state.get("quality_retry_count", 0)
 
     # Retry if quality failed and we haven't hit the max retry count
     should_retry_result = not quality_passed and retry_count < MAX_RETRY_COUNT
 
     logger.debug(
         "Checking retry condition",
-        extra={
-            "quality_passed": quality_passed,
-            "retry_count": retry_count,
-            "should_retry": should_retry_result,
-        },
+        quality_passed=quality_passed,
+        quality_retry_count=retry_count,
+        should_retry=should_retry_result,
     )
 
     return should_retry_result

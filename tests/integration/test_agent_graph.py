@@ -31,7 +31,7 @@ class TestAgentGraphExecution:
             "suggested_price": None,
             "preferred_platform": None,
             "needs_clarification": False,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
     def test_graph_is_built(self):
@@ -103,7 +103,7 @@ class TestAgentGraphRouting:
             "run_id": "test-run",
             "needs_clarification": True,
             "confidence": 0.35,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
         result = route_after_reasoning(state)
@@ -117,7 +117,7 @@ class TestAgentGraphRouting:
             "run_id": "test-run",
             "needs_clarification": False,
             "confidence": 0.91,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
         result = route_after_reasoning(state)
@@ -131,7 +131,7 @@ class TestAgentGraphRouting:
             "run_id": "test-run",
             "quality_passed": False,
             "quality_issues": ["Missing brand"],
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
         result = route_after_quality(state)
@@ -145,7 +145,7 @@ class TestAgentGraphRouting:
             "run_id": "test-run",
             "quality_passed": False,
             "quality_issues": ["Missing brand"],
-            "retry_count": 10,  # Exceeds max retries
+            "quality_retry_count": 10,  # Exceeds max retries
         }
 
         result = route_after_quality(state)
@@ -158,7 +158,7 @@ class TestAgentGraphRouting:
         state: ListState = {
             "run_id": "test-run",
             "quality_passed": True,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
         result = route_after_quality(state)
@@ -207,7 +207,7 @@ class TestAgentGraphNodes:
             "needs_clarification": False,
             "clarification_question": None,
             "error_state": None,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
     async def test_image_analysis_node_structure(self):
@@ -262,7 +262,7 @@ class TestAgentGraphState:
             "photos": [],
             "confidence": 0.0,
             "needs_clarification": False,
-            "retry_count": 0,
+            "quality_retry_count": 0,
         }
 
         # Verify required fields are present
@@ -271,7 +271,7 @@ class TestAgentGraphState:
         assert "photos" in state
         assert "confidence" in state
         assert "needs_clarification" in state
-        assert "retry_count" in state
+        assert "quality_retry_count" in state
 
     def test_state_optional_fields(self):
         """Test that optional fields can be None."""
@@ -281,7 +281,7 @@ class TestAgentGraphState:
             "photos": [],
             "confidence": 0.0,
             "needs_clarification": False,
-            "retry_count": 0,
+            "quality_retry_count": 0,
             "brand": None,
             "model_name": None,
             "suggested_price": None,

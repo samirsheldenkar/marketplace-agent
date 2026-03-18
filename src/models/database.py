@@ -1,7 +1,7 @@
 """Database models."""
 
 import enum
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -47,12 +47,12 @@ class Listing(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     created_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
     updated_at = Column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
     status = Column(String(20), default=ListingStatus.PENDING, nullable=False)

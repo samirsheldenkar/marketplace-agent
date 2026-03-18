@@ -42,7 +42,7 @@ async def scrape_ebay(state: ListState) -> dict:
         )
         return {
             "ebay_price_stats": None,
-            "error_state": "No eBay search query provided",
+            "ebay_error": "No eBay search query provided",
         }
 
     logger.info(
@@ -68,7 +68,7 @@ async def scrape_ebay(state: ListState) -> dict:
             )
             return {
                 "ebay_price_stats": None,
-                "error_state": f"eBay scraper failed for query: {query}",
+                "ebay_error": f"eBay scraper failed for query: {query}",
             }
 
         logger.info(
@@ -81,7 +81,7 @@ async def scrape_ebay(state: ListState) -> dict:
 
         return {
             "ebay_price_stats": price_stats,
-            "error_state": None,
+            "ebay_error": None,
         }
 
     except Exception as e:
@@ -93,5 +93,5 @@ async def scrape_ebay(state: ListState) -> dict:
         )
         return {
             "ebay_price_stats": None,
-            "error_state": f"eBay scraper error: {e!s}",
+            "ebay_error": f"eBay scraper error: {e!s}",
         }

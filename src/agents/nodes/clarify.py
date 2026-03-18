@@ -4,9 +4,9 @@ This module provides nodes for requesting user clarification when the agent
 needs additional information to create a high-quality listing.
 """
 
-import logging
 from typing import Any
 
+import structlog
 from langchain_openai import ChatOpenAI
 
 from src.agents.prompts.clarification import (
@@ -18,7 +18,7 @@ from src.config import get_settings
 from src.exceptions import LLMError
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def _build_context(state: ListState) -> dict[str, Any]:
@@ -55,8 +55,8 @@ def _get_llm() -> ChatOpenAI:
     settings = get_settings()
     return ChatOpenAI(
         model=settings.reasoning_model,
-        base_url=settings.litellm_url,
-        api_key=settings.litellm_api_key or "sk-dummy",
+        base_url=f"{settings.litellm_url}/v1",
+        api_key=settings.litellm_api_key,
         temperature=0.3,
     )
 
@@ -76,7 +76,7 @@ async def clarify(state: ListState) -> dict:
             - needs_clarification: True (signals graph to halt)
             - clarification_question: The generated question
             - error_state: None (clears any previous errors)
-            - retry_count: Incremented if already clarifying
+            - clarification_count: Incremented clarification round counter
 
     Raises:
         LLMError: If the LLM call fails.
@@ -84,15 +84,13 @@ async def clarify(state: ListState) -> dict:
     """
     logger.info(
         "Generating clarification question",
-        extra={
-            "item_type": state.get("item_type"),
-            "confidence": state.get("confidence"),
-            "retry_count": state.get("retry_count", 0),
-        },
+        item_type=state.get("item_type"),
+        confidence=state.get("confidence"),
+        clarification_count=state.get("clarification_count", 0),
     )
 
-    # Track retry count for clarification attempts
-    current_retry = state.get("retry_count", 0)
+    # Track clarification rounds
+    current_count = state.get("clarification_count", 0)
 
     try:
         llm = _get_llm()
@@ -114,7 +112,7 @@ async def clarify(state: ListState) -> dict:
         if result.confidence_threshold_met and not result.missing_fields:
             logger.info(
                 "No clarification needed, confidence threshold met",
-                extra={"confidence_threshold_met": result.confidence_threshold_met},
+                confidence_threshold_met=result.confidence_threshold_met,
             )
             return {
                 "needs_clarification": False,
@@ -133,18 +131,16 @@ async def clarify(state: ListState) -> dict:
 
         logger.info(
             "Clarification question generated",
-            extra={
-                "question": question,
-                "missing_fields": result.missing_fields,
-                "reasoning": result.reasoning,
-            },
+            question=question,
+            missing_fields=result.missing_fields,
+            reasoning=result.reasoning,
         )
 
         return {
             "needs_clarification": True,
             "clarification_question": question,
             "error_state": None,
-            "retry_count": current_retry + 1,
+            "clarification_count": current_count + 1,
         }
 
     except Exception as e:

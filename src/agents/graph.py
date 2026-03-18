@@ -25,8 +25,7 @@ Graph Structure:
     END
 """
 
-import logging
-
+import structlog
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.nodes.agent_decision import agent_decision
@@ -39,7 +38,7 @@ from src.agents.nodes.scrape_ebay import scrape_ebay
 from src.agents.nodes.scrape_vinted import scrape_vinted
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def route_after_reasoning(state: ListState) -> str:
@@ -62,13 +61,13 @@ def route_after_reasoning(state: ListState) -> str:
     if needs_clarification:
         logger.info(
             "Routing to clarify",
-            extra={"confidence": state.get("confidence")},
+            confidence=state.get("confidence"),
         )
         return ["clarify"]
 
     logger.info(
         "Routing to parallel scrapers",
-        extra={"confidence": state.get("confidence")},
+        confidence=state.get("confidence"),
     )
     return ["scrape_ebay", "scrape_vinted"]
 
@@ -91,20 +90,16 @@ def route_after_quality(state: ListState) -> str:
     if not quality_passed and can_retry:
         logger.info(
             "Quality check failed, retrying listing generation",
-            extra={
-                "quality_issues": state.get("quality_issues", []),
-                "retry_count": state.get("retry_count", 0),
-            },
+            quality_issues=state.get("quality_issues", []),
+            quality_retry_count=state.get("quality_retry_count", 0),
         )
         return "listing_writer"
 
     if not quality_passed:
         logger.warning(
             "Quality check failed, max retries exceeded",
-            extra={
-                "quality_issues": state.get("quality_issues", []),
-                "retry_count": state.get("retry_count", 0),
-            },
+            quality_issues=state.get("quality_issues", []),
+            quality_retry_count=state.get("quality_retry_count", 0),
         )
 
     return END

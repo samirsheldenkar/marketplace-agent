@@ -1,7 +1,7 @@
 """Database repository patterns."""
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -19,25 +19,26 @@ class ListingRepository:
 
         Args:
             session: SQLAlchemy async session.
+
         """
         self._session = session
 
     async def create(
         self,
-        item_type: Optional[str] = None,
-        item_description: Optional[str] = None,
-        brand: Optional[str] = None,
-        model_name: Optional[str] = None,
-        size: Optional[str] = None,
-        color: Optional[str] = None,
-        condition: Optional[str] = None,
-        condition_notes: Optional[str] = None,
-        confidence: Optional[float] = None,
-        accessories_included: Optional[List[str]] = None,
-        suggested_price: Optional[float] = None,
-        preferred_platform: Optional[str] = None,
-        platform_reasoning: Optional[str] = None,
-        image_paths: Optional[List[str]] = None,
+        item_type: str | None = None,
+        item_description: str | None = None,
+        brand: str | None = None,
+        model_name: str | None = None,
+        size: str | None = None,
+        color: str | None = None,
+        condition: str | None = None,
+        condition_notes: str | None = None,
+        confidence: float | None = None,
+        accessories_included: list[str] | None = None,
+        suggested_price: float | None = None,
+        preferred_platform: str | None = None,
+        platform_reasoning: str | None = None,
+        image_paths: list[str] | None = None,
     ) -> Listing:
         """Create a new listing with initial status 'pending'.
 
@@ -59,6 +60,7 @@ class ListingRepository:
 
         Returns:
             Created Listing instance.
+
         """
         listing = Listing(
             status=ListingStatus.PENDING,
@@ -82,7 +84,7 @@ class ListingRepository:
         await self._session.refresh(listing)
         return listing
 
-    async def get_by_id(self, listing_id: UUID) -> Optional[Listing]:
+    async def get_by_id(self, listing_id: UUID) -> Listing | None:
         """Get listing by UUID.
 
         Args:
@@ -90,6 +92,7 @@ class ListingRepository:
 
         Returns:
             Listing instance or None if not found.
+
         """
         stmt = (
             select(Listing)
@@ -101,7 +104,7 @@ class ListingRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update(self, listing_id: UUID, **kwargs: Any) -> Optional[Listing]:
+    async def update(self, listing_id: UUID, **kwargs: Any) -> Listing | None:
         """Update listing fields.
 
         Args:
@@ -110,6 +113,7 @@ class ListingRepository:
 
         Returns:
             Updated Listing instance or None if not found.
+
         """
         listing = await self.get_by_id(listing_id)
         if listing is None:
@@ -119,14 +123,14 @@ class ListingRepository:
             if hasattr(listing, key):
                 setattr(listing, key, value)
 
-        listing.updated_at = datetime.utcnow()
+        listing.updated_at = datetime.now(UTC)
         await self._session.flush()
         await self._session.refresh(listing)
         return listing
 
     async def update_status(
         self, listing_id: UUID, status: ListingStatus
-    ) -> Optional[Listing]:
+    ) -> Listing | None:
         """Update just the status field.
 
         Args:
@@ -135,12 +139,13 @@ class ListingRepository:
 
         Returns:
             Updated Listing instance or None if not found.
+
         """
         return await self.update(listing_id, status=status)
 
     async def update_raw_state(
-        self, listing_id: UUID, raw_state: Dict[str, Any]
-    ) -> Optional[Listing]:
+        self, listing_id: UUID, raw_state: dict[str, Any]
+    ) -> Listing | None:
         """Store the full LangGraph state snapshot.
 
         Args:
@@ -149,6 +154,7 @@ class ListingRepository:
 
         Returns:
             Updated Listing instance or None if not found.
+
         """
         return await self.update(listing_id, raw_state=raw_state)
 
@@ -157,6 +163,7 @@ class ListingRepository:
 
         Args:
             scrape_run: ScrapeRun instance to associate.
+
         """
         self._session.add(scrape_run)
         await self._session.flush()
@@ -166,16 +173,17 @@ class ListingRepository:
 
         Args:
             agent_run: AgentRun instance to associate.
+
         """
         self._session.add(agent_run)
         await self._session.flush()
 
     async def list(
         self,
-        status: Optional[ListingStatus] = None,
+        status: ListingStatus | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Listing]:
+    ) -> list[Listing]:
         """List all listings with optional status filter and pagination.
 
         Args:
@@ -185,6 +193,7 @@ class ListingRepository:
 
         Returns:
             List of Listing instances.
+
         """
         stmt = select(Listing)
         if status is not None:
@@ -202,6 +211,7 @@ class ScrapeRunRepository:
 
         Args:
             session: SQLAlchemy async session.
+
         """
         self._session = session
 
@@ -210,10 +220,11 @@ class ScrapeRunRepository:
         listing_id: UUID,
         source: str,
         query_string: str,
-        stats: Optional[Dict[str, Any]] = None,
-        raw_items: Optional[List[Dict[str, Any]]] = None,
-        item_count: Optional[int] = None,
-        duration_ms: Optional[int] = None,
+        stats: dict[str, Any] | None = None,
+        raw_items: list[dict[str, Any]] | None = None,
+        item_count: int | None = None,
+        duration_ms: int | None = None,
+        error_message: str | None = None,
     ) -> ScrapeRun:
         """Create a scrape run record.
 
@@ -225,9 +236,11 @@ class ScrapeRunRepository:
             raw_items: Raw scraped items data.
             item_count: Number of items scraped.
             duration_ms: Duration of scrape in milliseconds.
+            error_message: Optional error message if scrape failed.
 
         Returns:
             Created ScrapeRun instance.
+
         """
         scrape_run = ScrapeRun(
             listing_id=listing_id,
@@ -237,13 +250,14 @@ class ScrapeRunRepository:
             raw_items=raw_items,
             item_count=item_count,
             duration_ms=duration_ms,
+            error_message=error_message,
         )
         self._session.add(scrape_run)
         await self._session.flush()
         await self._session.refresh(scrape_run)
         return scrape_run
 
-    async def get_by_id(self, scrape_run_id: UUID) -> Optional[ScrapeRun]:
+    async def get_by_id(self, scrape_run_id: UUID) -> ScrapeRun | None:
         """Get scrape run by UUID.
 
         Args:
@@ -251,12 +265,13 @@ class ScrapeRunRepository:
 
         Returns:
             ScrapeRun instance or None if not found.
+
         """
         stmt = select(ScrapeRun).where(ScrapeRun.id == scrape_run_id)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_listing(self, listing_id: UUID) -> List[ScrapeRun]:
+    async def get_by_listing(self, listing_id: UUID) -> list[ScrapeRun]:
         """Get all scrape runs for a listing.
 
         Args:
@@ -264,6 +279,7 @@ class ScrapeRunRepository:
 
         Returns:
             List of ScrapeRun instances.
+
         """
         stmt = (
             select(ScrapeRun)
@@ -274,8 +290,8 @@ class ScrapeRunRepository:
         return list(result.scalars().all())
 
     async def update_stats(
-        self, scrape_run_id: UUID, stats: Dict[str, Any]
-    ) -> Optional[ScrapeRun]:
+        self, scrape_run_id: UUID, stats: dict[str, Any]
+    ) -> ScrapeRun | None:
         """Update the stats JSONB field.
 
         Args:
@@ -284,6 +300,7 @@ class ScrapeRunRepository:
 
         Returns:
             Updated ScrapeRun instance or None if not found.
+
         """
         scrape_run = await self.get_by_id(scrape_run_id)
         if scrape_run is None:
@@ -296,7 +313,7 @@ class ScrapeRunRepository:
 
     async def mark_error(
         self, scrape_run_id: UUID, error_message: str
-    ) -> Optional[ScrapeRun]:
+    ) -> ScrapeRun | None:
         """Mark scrape run as failed with error message.
 
         Args:
@@ -305,6 +322,7 @@ class ScrapeRunRepository:
 
         Returns:
             Updated ScrapeRun instance or None if not found.
+
         """
         scrape_run = await self.get_by_id(scrape_run_id)
         if scrape_run is None:
@@ -324,6 +342,7 @@ class AgentRunRepository:
 
         Args:
             session: SQLAlchemy async session.
+
         """
         self._session = session
 
@@ -331,8 +350,8 @@ class AgentRunRepository:
         self,
         listing_id: UUID,
         node_name: str,
-        input_summary: Optional[Dict[str, Any]] = None,
-        llm_model_used: Optional[str] = None,
+        input_summary: dict[str, Any] | None = None,
+        llm_model_used: str | None = None,
     ) -> AgentRun:
         """Create an agent run audit record.
 
@@ -344,6 +363,7 @@ class AgentRunRepository:
 
         Returns:
             Created AgentRun instance.
+
         """
         agent_run = AgentRun(
             listing_id=listing_id,
@@ -357,7 +377,7 @@ class AgentRunRepository:
         await self._session.refresh(agent_run)
         return agent_run
 
-    async def get_by_id(self, agent_run_id: UUID) -> Optional[AgentRun]:
+    async def get_by_id(self, agent_run_id: UUID) -> AgentRun | None:
         """Get agent run by UUID.
 
         Args:
@@ -365,12 +385,13 @@ class AgentRunRepository:
 
         Returns:
             AgentRun instance or None if not found.
+
         """
         stmt = select(AgentRun).where(AgentRun.id == agent_run_id)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_listing(self, listing_id: UUID) -> List[AgentRun]:
+    async def get_by_listing(self, listing_id: UUID) -> list[AgentRun]:
         """Get all agent runs for a listing.
 
         Args:
@@ -378,6 +399,7 @@ class AgentRunRepository:
 
         Returns:
             List of AgentRun instances.
+
         """
         stmt = (
             select(AgentRun)
@@ -390,9 +412,9 @@ class AgentRunRepository:
     async def complete(
         self,
         agent_run_id: UUID,
-        output_summary: Optional[Dict[str, Any]] = None,
-        token_usage: Optional[Dict[str, int]] = None,
-    ) -> Optional[AgentRun]:
+        output_summary: dict[str, Any] | None = None,
+        token_usage: dict[str, int] | None = None,
+    ) -> AgentRun | None:
         """Mark run as completed with output summary and token usage.
 
         Args:
@@ -402,13 +424,14 @@ class AgentRunRepository:
 
         Returns:
             Updated AgentRun instance or None if not found.
+
         """
         agent_run = await self.get_by_id(agent_run_id)
         if agent_run is None:
             return None
 
         agent_run.status = "completed"
-        agent_run.completed_at = datetime.utcnow()
+        agent_run.completed_at = datetime.now(UTC)
         agent_run.output_summary = output_summary
         agent_run.token_usage = token_usage
         await self._session.flush()
@@ -417,7 +440,7 @@ class AgentRunRepository:
 
     async def mark_error(
         self, agent_run_id: UUID, error_message: str
-    ) -> Optional[AgentRun]:
+    ) -> AgentRun | None:
         """Mark run as failed with error message.
 
         Args:
@@ -426,13 +449,14 @@ class AgentRunRepository:
 
         Returns:
             Updated AgentRun instance or None if not found.
+
         """
         agent_run = await self.get_by_id(agent_run_id)
         if agent_run is None:
             return None
 
         agent_run.status = "failed"
-        agent_run.completed_at = datetime.utcnow()
+        agent_run.completed_at = datetime.now(UTC)
         agent_run.error_message = error_message
         await self._session.flush()
         await self._session.refresh(agent_run)

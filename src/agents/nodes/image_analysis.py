@@ -2,10 +2,10 @@
 
 import asyncio
 import base64
-import logging
 from pathlib import Path
 from typing import Any
 
+import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
@@ -17,7 +17,7 @@ from src.agents.prompts.image_analysis import (
 from src.config import get_settings
 from src.models.state import ListState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 async def _load_image_as_base64(file_path: str) -> str:
@@ -56,6 +56,7 @@ def _get_image_media_type(file_path: str) -> str:
         ".png": "image/png",
         ".webp": "image/webp",
         ".gif": "image/gif",
+        ".heic": "image/heic",
     }
     return media_types.get(extension, "image/jpeg")
 

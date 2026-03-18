@@ -37,7 +37,7 @@ async def scrape_vinted(state: ListState) -> dict:
         logger.warning("No Vinted query provided in state")
         return {
             "vinted_price_stats": None,
-            "error_state": "No Vinted search query available",
+            "vinted_error": "No Vinted search query available",
         }
 
     logger.info(
@@ -61,7 +61,7 @@ async def scrape_vinted(state: ListState) -> dict:
             )
             return {
                 "vinted_price_stats": None,
-                "error_state": f"Vinted scraper returned no results for query: {query}",
+                "vinted_error": f"Vinted scraper returned no results for query: {query}",
             }
 
         logger.info(
@@ -74,7 +74,7 @@ async def scrape_vinted(state: ListState) -> dict:
 
         return {
             "vinted_price_stats": price_stats,
-            "error_state": None,
+            "vinted_error": None,
         }
 
     except Exception as e:
@@ -85,5 +85,5 @@ async def scrape_vinted(state: ListState) -> dict:
         )
         return {
             "vinted_price_stats": None,
-            "error_state": f"Vinted scraper failed: {e!s}",
+            "vinted_error": f"Vinted scraper failed: {e!s}",
         }
