@@ -7,7 +7,6 @@ required fields, price reasonableness, and placeholder text detection.
 
 import logging
 import re
-from typing import List, Optional
 
 from src.models.state import ListState
 
@@ -39,6 +38,7 @@ def _count_words(text: str) -> int:
 
     Returns:
         Number of words in the text.
+
     """
     if not text:
         return 0
@@ -55,6 +55,7 @@ def _contains_placeholder(text: str) -> bool:
 
     Returns:
         True if placeholder patterns are found, False otherwise.
+
     """
     if not text:
         return False
@@ -66,7 +67,7 @@ def _contains_placeholder(text: str) -> bool:
     return False
 
 
-def _get_median_price(state: ListState) -> Optional[float]:
+def _get_median_price(state: ListState) -> float | None:
     """Get the median price from available price statistics.
 
     Prioritizes eBay median if available, falls back to Vinted median.
@@ -76,6 +77,7 @@ def _get_median_price(state: ListState) -> Optional[float]:
 
     Returns:
         Median price if available, None otherwise.
+
     """
     # Check eBay price stats first
     ebay_stats = state.get("ebay_price_stats")
@@ -90,7 +92,7 @@ def _get_median_price(state: ListState) -> Optional[float]:
     return None
 
 
-def _validate_title(title: Optional[str]) -> List[str]:
+def _validate_title(title: str | None) -> list[str]:
     """Validate the listing title.
 
     Args:
@@ -98,8 +100,9 @@ def _validate_title(title: Optional[str]) -> List[str]:
 
     Returns:
         List of validation issues found.
+
     """
-    issues: List[str] = []
+    issues: list[str] = []
 
     if not title:
         issues.append("Title is missing or empty")
@@ -121,7 +124,7 @@ def _validate_title(title: Optional[str]) -> List[str]:
     return issues
 
 
-def _validate_description(description: Optional[str]) -> List[str]:
+def _validate_description(description: str | None) -> list[str]:
     """Validate the listing description.
 
     Args:
@@ -129,8 +132,9 @@ def _validate_description(description: Optional[str]) -> List[str]:
 
     Returns:
         List of validation issues found.
+
     """
-    issues: List[str] = []
+    issues: list[str] = []
 
     if not description:
         issues.append("Description is missing or empty")
@@ -159,7 +163,7 @@ def _validate_description(description: Optional[str]) -> List[str]:
     return issues
 
 
-def _validate_price(state: ListState) -> List[str]:
+def _validate_price(state: ListState) -> list[str]:
     """Validate the suggested price.
 
     Args:
@@ -167,8 +171,9 @@ def _validate_price(state: ListState) -> List[str]:
 
     Returns:
         List of validation issues found.
+
     """
-    issues: List[str] = []
+    issues: list[str] = []
 
     suggested_price = state.get("suggested_price")
 
@@ -219,6 +224,7 @@ def quality_check(state: ListState) -> dict:
         Dictionary with state updates:
             - quality_passed: True if all checks pass, False otherwise
             - quality_issues: List of descriptions for any issues found
+
     """
     logger.info(
         "Starting quality check",
@@ -228,7 +234,7 @@ def quality_check(state: ListState) -> dict:
         },
     )
 
-    issues: List[str] = []
+    issues: list[str] = []
 
     # Get listing draft
     listing_draft = state.get("listing_draft")
@@ -266,10 +272,15 @@ def quality_check(state: ListState) -> dict:
             extra={"issue_count": len(issues), "issues": issues},
         )
 
-    return {
+    result = {
         "quality_passed": quality_passed,
         "quality_issues": issues,
     }
+
+    if not quality_passed:
+        result["retry_count"] = 1
+
+    return result
 
 
 def should_retry(state: ListState) -> bool:
@@ -283,6 +294,7 @@ def should_retry(state: ListState) -> bool:
 
     Returns:
         True if we should retry listing generation, False otherwise.
+
     """
     quality_passed = state.get("quality_passed", False)
     retry_count = state.get("retry_count", 0)

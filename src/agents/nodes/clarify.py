@@ -5,7 +5,7 @@ needs additional information to create a high-quality listing.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from langchain_openai import ChatOpenAI
 
@@ -21,7 +21,7 @@ from src.models.state import ListState
 logger = logging.getLogger(__name__)
 
 
-def _build_context(state: ListState) -> Dict[str, Any]:
+def _build_context(state: ListState) -> dict[str, Any]:
     """Build context dictionary from current state for prompt formatting.
 
     Args:
@@ -29,6 +29,7 @@ def _build_context(state: ListState) -> Dict[str, Any]:
 
     Returns:
         Dictionary with item attributes for prompt formatting.
+
     """
     return {
         "item_description": state.get("item_description", "Unknown"),
@@ -49,6 +50,7 @@ def _get_llm() -> ChatOpenAI:
 
     Returns:
         Configured ChatOpenAI instance.
+
     """
     settings = get_settings()
     return ChatOpenAI(
@@ -78,6 +80,7 @@ async def clarify(state: ListState) -> dict:
 
     Raises:
         LLMError: If the LLM call fails.
+
     """
     logger.info(
         "Generating clarification question",
@@ -152,7 +155,7 @@ async def clarify(state: ListState) -> dict:
         raise LLMError(f"Failed to generate clarification question: {e}") from e
 
 
-def _extract_field_updates(user_answer: str) -> Dict[str, Any]:
+def _extract_field_updates(user_answer: str) -> dict[str, Any]:
     """Extract structured field updates from user's free-form answer.
 
     This is a simple extraction that looks for common patterns in user answers.
@@ -163,8 +166,9 @@ def _extract_field_updates(user_answer: str) -> Dict[str, Any]:
 
     Returns:
         Dictionary of extracted field updates.
+
     """
-    updates: Dict[str, Any] = {}
+    updates: dict[str, Any] = {}
     answer_lower = user_answer.lower()
 
     # Simple pattern matching for common fields
@@ -241,6 +245,7 @@ async def resume_after_clarification(state: ListState, user_answer: str) -> dict
             - needs_clarification: False (resume normal flow)
             - clarification_question: None (clear the question)
             - error_state: None
+
     """
     logger.info(
         "Processing user clarification response",

@@ -1,18 +1,37 @@
 """Database models."""
 
+import enum
 from datetime import datetime
-from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, Numeric, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
+
+
+class ListingStatus(str, enum.Enum):
+    """Listing processing status."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    CLARIFICATION = "clarification"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class Base(DeclarativeBase):
     """Base class for all models."""
 
-    pass
 
 
 class Listing(Base):
@@ -36,7 +55,7 @@ class Listing(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    status = Column(String(20), default="pending", nullable=False)
+    status = Column(String(20), default=ListingStatus.PENDING, nullable=False)
 
     # Item attributes
     item_type = Column(String(100))

@@ -1,9 +1,7 @@
 """Image service for upload, validation, and storage."""
 
-import os
 import uuid
 from pathlib import Path
-from typing import List
 
 from fastapi import UploadFile
 
@@ -19,6 +17,7 @@ class ImageService:
 
         Args:
             settings: Application settings
+
         """
         self.settings = settings
         self.storage_path = Path(settings.image_storage_path)
@@ -32,6 +31,7 @@ class ImageService:
 
         Raises:
             ValidationError: If file is invalid
+
         """
         # Check file extension
         ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
@@ -55,8 +55,8 @@ class ImageService:
     async def store_images(
         self,
         listing_id: str,
-        files: List[UploadFile],
-    ) -> List[str]:
+        files: list[UploadFile],
+    ) -> list[str]:
         """Store uploaded images.
 
         Args:
@@ -68,6 +68,7 @@ class ImageService:
 
         Raises:
             ImageProcessingError: If storage fails
+
         """
         # Create listing-specific directory
         listing_dir = self.storage_path / listing_id
@@ -94,6 +95,6 @@ class ImageService:
                 stored_paths.append(str(file_path))
 
             except Exception as e:
-                raise ImageProcessingError(f"Failed to store image: {str(e)}")
+                raise ImageProcessingError(f"Failed to store image: {e!s}")
 
         return stored_paths

@@ -16,6 +16,7 @@ class MarketplaceAgentError(Exception):
 
     Args:
         message: Optional error message. Defaults to a generic message.
+
     """
 
     def __init__(
@@ -25,6 +26,7 @@ class MarketplaceAgentError(Exception):
 
         Args:
             message: Human-readable error description.
+
         """
         self.message = message
         super().__init__(self.message)
@@ -38,6 +40,7 @@ class ScraperError(MarketplaceAgentError):
 
     Args:
         message: Description of the scraper failure.
+
     """
 
     def __init__(self, message: str = "Scraper operation failed") -> None:
@@ -45,6 +48,7 @@ class ScraperError(MarketplaceAgentError):
 
         Args:
             message: Description of the scraper failure.
+
         """
         super().__init__(message)
 
@@ -57,6 +61,7 @@ class LLMError(MarketplaceAgentError):
 
     Args:
         message: Description of the LLM failure.
+
     """
 
     def __init__(self, message: str = "LLM operation failed") -> None:
@@ -64,6 +69,7 @@ class LLMError(MarketplaceAgentError):
 
         Args:
             message: Description of the LLM failure.
+
         """
         super().__init__(message)
 
@@ -76,6 +82,7 @@ class ValidationError(MarketplaceAgentError):
 
     Args:
         message: Description of the validation failure.
+
     """
 
     def __init__(self, message: str = "Validation failed") -> None:
@@ -83,6 +90,7 @@ class ValidationError(MarketplaceAgentError):
 
         Args:
             message: Description of the validation failure.
+
         """
         super().__init__(message)
 
@@ -95,6 +103,7 @@ class ImageProcessingError(MarketplaceAgentError):
 
     Args:
         message: Description of the image processing failure.
+
     """
 
     def __init__(self, message: str = "Image processing failed") -> None:
@@ -102,6 +111,7 @@ class ImageProcessingError(MarketplaceAgentError):
 
         Args:
             message: Description of the image processing failure.
+
         """
         super().__init__(message)
 
@@ -114,6 +124,7 @@ class ClarificationTimeoutError(MarketplaceAgentError):
 
     Args:
         message: Description of the timeout condition.
+
     """
 
     def __init__(self, message: str = "Clarification request timed out") -> None:
@@ -121,5 +132,6 @@ class ClarificationTimeoutError(MarketplaceAgentError):
 
         Args:
             message: Description of the timeout condition.
+
         """
         super().__init__(message)

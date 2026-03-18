@@ -1,9 +1,8 @@
 """Pydantic schemas for API request/response validation."""
 
-from typing import Any, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class PriceStats(BaseModel):
@@ -14,7 +13,7 @@ class PriceStats(BaseModel):
     median_price: float
     min_price: float
     max_price: float
-    items: List[dict]
+    items: list[dict]
 
 
 class ListingDraft(BaseModel):
@@ -22,7 +21,7 @@ class ListingDraft(BaseModel):
 
     title: str
     description: str
-    category_suggestions: List[str]
+    category_suggestions: list[str]
     shipping_suggestion: str
     returns_policy: str
 
@@ -31,8 +30,8 @@ class ItemInfo(BaseModel):
     """Item identification info."""
 
     type: str
-    brand: Optional[str] = None
-    model: Optional[str] = None
+    brand: str | None = None
+    model: str | None = None
     condition: str
     confidence: float
 
@@ -44,17 +43,17 @@ class PricingInfo(BaseModel):
     currency: str = "GBP"
     preferred_platform: str
     platform_reasoning: str
-    ebay_stats: Optional[PriceStats] = None
-    vinted_stats: Optional[PriceStats] = None
+    ebay_stats: PriceStats | None = None
+    vinted_stats: PriceStats | None = None
 
 
 class CreateListingRequest(BaseModel):
     """Request schema for creating a listing."""
 
-    brand: Optional[str] = None
-    size: Optional[str] = None
-    color: Optional[str] = None
-    notes: Optional[str] = None
+    brand: str | None = None
+    size: str | None = None
+    color: str | None = None
+    notes: str | None = None
 
 
 class CreateListingResponse(BaseModel):
@@ -78,10 +77,10 @@ class ClarificationResponse(BaseModel):
 
     listing_id: UUID
     status: str
-    clarification_question: Optional[str] = None
-    item: Optional[ItemInfo] = None
-    pricing: Optional[PricingInfo] = None
-    listing_draft: Optional[ListingDraft] = None
+    clarification_question: str | None = None
+    item: ItemInfo | None = None
+    pricing: PricingInfo | None = None
+    listing_draft: ListingDraft | None = None
 
 
 class GetListingResponse(BaseModel):

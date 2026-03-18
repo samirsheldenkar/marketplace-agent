@@ -34,8 +34,6 @@ async def get_db():
 
 async def init_db():
     """Initialize database tables."""
-    from src.models.database import Base
-
     async with engine.begin() as conn:
         # In production, use Alembic migrations instead
         # await conn.run_sync(Base.metadata.create_all)

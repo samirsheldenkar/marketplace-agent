@@ -1,9 +1,7 @@
 """Agent reasoning prompts."""
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
-
 
 REASONING_SYSTEM = """You are an expert marketplace listing analyst specializing in item identification and search optimization.
 
@@ -84,19 +82,19 @@ class ReasoningResult(BaseModel):
         ...,
         description="Normalized item type (e.g., 'headphones', 'dress', 'sneakers')",
     )
-    brand: Optional[str] = Field(
+    brand: str | None = Field(
         None,
         description="Item brand/manufacturer if identifiable",
     )
-    model_name: Optional[str] = Field(
+    model_name: str | None = Field(
         None,
         description="Specific model name or number if applicable",
     )
-    color: Optional[str] = Field(
+    color: str | None = Field(
         None,
         description="Primary color of the item",
     )
-    size: Optional[str] = Field(
+    size: str | None = Field(
         None,
         description="Size specification (e.g., 'M', '42', 'One Size')",
     )
@@ -104,7 +102,7 @@ class ReasoningResult(BaseModel):
         ...,
         description="Item condition: 'New', 'Excellent', 'Good', 'Fair', or 'Poor'",
     )
-    condition_notes: Optional[str] = Field(
+    condition_notes: str | None = Field(
         None,
         description="Additional notes about item condition",
     )

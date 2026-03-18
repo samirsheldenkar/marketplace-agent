@@ -3,7 +3,6 @@
 This LangGraph node calls the Vinted scraper tool and stores results in state.
 """
 
-from typing import Optional
 
 import structlog
 
@@ -30,9 +29,10 @@ async def scrape_vinted(state: ListState) -> dict:
         Dictionary with state updates:
             - vinted_price_stats: PriceStats dict or None if failed
             - error_state: Error message if failed, else None
+
     """
     settings = get_settings()
-    query: Optional[str] = state.get("vinted_query_used")
+    query: str | None = state.get("vinted_query_used")
 
     if not query:
         logger.warning("No Vinted query provided in state")
@@ -49,7 +49,7 @@ async def scrape_vinted(state: ListState) -> dict:
     )
 
     try:
-        price_stats: Optional[PriceStats] = await scrape_vinted_listings(
+        price_stats: PriceStats | None = await scrape_vinted_listings(
             query=query,
             country=settings.vinted_country,
             max_results=settings.max_scraper_results,
@@ -87,5 +87,5 @@ async def scrape_vinted(state: ListState) -> dict:
         )
         return {
             "vinted_price_stats": None,
-            "error_state": f"Vinted scraper failed: {str(e)}",
+            "error_state": f"Vinted scraper failed: {e!s}",
         }

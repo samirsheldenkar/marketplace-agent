@@ -37,7 +37,6 @@ from src.agents.nodes.listing_writer import listing_writer
 from src.agents.nodes.quality_check import quality_check, should_retry
 from src.agents.nodes.scrape_ebay import scrape_ebay
 from src.agents.nodes.scrape_vinted import scrape_vinted
-from src.config import get_settings
 from src.models.state import ListState
 
 logger = logging.getLogger(__name__)
@@ -56,6 +55,7 @@ def route_after_reasoning(state: ListState) -> str:
         "clarify" if clarification is needed, "scrape_ebay" otherwise.
         The "scrape_ebay" return triggers the parallel fan-out to both
         scrapers via the graph edges.
+
     """
     needs_clarification = state.get("needs_clarification", False)
 
@@ -64,13 +64,13 @@ def route_after_reasoning(state: ListState) -> str:
             "Routing to clarify",
             extra={"confidence": state.get("confidence")},
         )
-        return "clarify"
+        return ["clarify"]
 
     logger.info(
         "Routing to parallel scrapers",
         extra={"confidence": state.get("confidence")},
     )
-    return "scrape_ebay"
+    return ["scrape_ebay", "scrape_vinted"]
 
 
 def route_after_quality(state: ListState) -> str:
@@ -83,6 +83,7 @@ def route_after_quality(state: ListState) -> str:
 
     Returns:
         "listing_writer" if quality failed and retry is available, END otherwise.
+
     """
     quality_passed = state.get("quality_passed", False)
     can_retry = should_retry(state)
@@ -117,6 +118,7 @@ def build_graph() -> StateGraph:
 
     Returns:
         Compiled StateGraph ready for execution.
+
     """
     # Create the state graph
     graph = StateGraph(ListState)
@@ -146,18 +148,12 @@ def build_graph() -> StateGraph:
         {
             "clarify": "clarify",
             "scrape_ebay": "scrape_ebay",
+            "scrape_vinted": "scrape_vinted",
         },
     )
 
     # Add edge: clarify -> agent_reasoning (loop back for re-analysis)
     graph.add_edge("clarify", "agent_reasoning")
-
-    # Add parallel fan-out: agent_reasoning -> scrape_ebay and scrape_vinted
-    # Note: The conditional edge above routes to scrape_ebay, which triggers
-    # the parallel execution. We also need to add the edge to scrape_vinted.
-    # In LangGraph, parallel execution is achieved by having multiple edges
-    # from the same source node.
-    graph.add_edge("agent_reasoning", "scrape_vinted")
 
     # Add fan-in: both scrapers -> agent_decision
     graph.add_edge("scrape_ebay", "agent_decision")

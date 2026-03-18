@@ -6,7 +6,6 @@ for fetching marketplace listings and calculating price statistics.
 
 import asyncio
 import statistics
-from typing import Optional
 
 import structlog
 
@@ -20,7 +19,7 @@ logger = structlog.get_logger()
 RATE_LIMIT_SECONDS = 1.0
 
 
-def _extract_price(item: dict) -> Optional[float]:
+def _extract_price(item: dict) -> float | None:
     """Extract price from a Vinted item dict.
 
     Args:
@@ -28,6 +27,7 @@ def _extract_price(item: dict) -> Optional[float]:
 
     Returns:
         Price as float, or None if extraction fails.
+
     """
     try:
         # Vinted items typically have a 'price' field with 'amount' or direct value
@@ -82,6 +82,7 @@ def _sync_scrape(query: str, country: str, max_results: int) -> dict:
 
     Raises:
         ScraperError: If scraping fails.
+
     """
     from vinted_scraper import VintedScraper
 
@@ -99,7 +100,7 @@ async def scrape_vinted_listings(
     query: str,
     country: str = "GB",
     max_results: int = 50,
-) -> Optional[PriceStats]:
+) -> PriceStats | None:
     """Scrape Vinted listings and calculate price statistics.
 
     This function wraps the synchronous vinted-scraper library with async
@@ -117,6 +118,7 @@ async def scrape_vinted_listings(
         >>> stats = await scrape_vinted_listings("Nike Air Max 90")
         >>> if stats:
         ...     print(f"Average price: £{stats['avg_price']:.2f}")
+
     """
     settings = get_settings()
     timeout = settings.scraper_timeout_seconds
@@ -188,7 +190,7 @@ async def scrape_vinted_listings(
 
             return price_stats
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 "Vinted scrape timeout",
                 query=query,
@@ -201,13 +203,12 @@ async def scrape_vinted_listings(
                 logger.info("Retrying after timeout", wait_seconds=wait_time)
                 await asyncio.sleep(wait_time)
                 continue
-            else:
-                logger.error(
-                    "Vinted scrape failed after max retries",
-                    query=query,
-                    error="timeout",
-                )
-                return None
+            logger.error(
+                "Vinted scrape failed after max retries",
+                query=query,
+                error="timeout",
+            )
+            return None
 
         except ScraperError as e:
             logger.warning(
@@ -223,13 +224,12 @@ async def scrape_vinted_listings(
                 # Ensure rate limiting between retries
                 await asyncio.sleep(max(wait_time, RATE_LIMIT_SECONDS))
                 continue
-            else:
-                logger.error(
-                    "Vinted scrape failed after max retries",
-                    query=query,
-                    error=str(e),
-                )
-                return None
+            logger.error(
+                "Vinted scrape failed after max retries",
+                query=query,
+                error=str(e),
+            )
+            return None
 
         except Exception as e:
             logger.error(

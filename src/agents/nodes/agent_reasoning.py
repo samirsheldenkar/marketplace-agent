@@ -55,6 +55,7 @@ async def agent_reasoning(state: ListState) -> dict[str, Any]:
 
     Raises:
         LLMError: If LLM call fails after all retries.
+
     """
     settings = get_settings()
 

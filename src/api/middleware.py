@@ -7,8 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.config import get_settings
-
 
 class RequestTimingMiddleware(BaseHTTPMiddleware):
     """Middleware to log request timing."""
@@ -27,6 +25,7 @@ def setup_middleware(app):
 
     Args:
         app: FastAPI application instance
+
     """
     # CORS
     app.add_middleware(

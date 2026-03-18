@@ -8,7 +8,7 @@ Vinted data if eBay scraping fails.
 import structlog
 
 from src.config import get_settings
-from src.models.state import ListState, PriceStats
+from src.models.state import ListState
 from src.tools.ebay_scraper import scrape_ebay_sold_listings
 
 logger = structlog.get_logger()
@@ -29,6 +29,7 @@ async def scrape_ebay(state: ListState) -> dict:
         Dictionary with state updates:
             - ebay_price_stats: PriceStats dict or None if failed
             - error_state: Error message if failed, else None
+
     """
     settings = get_settings()
     query = state.get("ebay_query_used")
@@ -93,5 +94,5 @@ async def scrape_ebay(state: ListState) -> dict:
         )
         return {
             "ebay_price_stats": None,
-            "error_state": f"eBay scraper error: {str(e)}",
+            "error_state": f"eBay scraper error: {e!s}",
         }

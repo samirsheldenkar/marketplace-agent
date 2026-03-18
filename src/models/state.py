@@ -1,6 +1,7 @@
 """LangGraph state definitions."""
 
-from typing import Any, List, Optional, TypedDict
+import operator
+from typing import Annotated, Any, TypedDict
 
 
 class PriceStats(TypedDict):
@@ -11,7 +12,7 @@ class PriceStats(TypedDict):
     median_price: float
     min_price: float
     max_price: float
-    items: List[dict]
+    items: list[dict]
 
 
 class ListingDraft(TypedDict):
@@ -19,7 +20,7 @@ class ListingDraft(TypedDict):
 
     title: str
     description: str
-    category_suggestions: List[str]
+    category_suggestions: list[str]
     shipping_suggestion: str
     returns_policy: str
     platform_variants: dict[str, dict]
@@ -33,40 +34,41 @@ class ListState(TypedDict, total=False):
 
     # Control
     run_id: str
-    messages: List[Any]
+    messages: list[Any]
 
     # Item identification
     item_description: str
     item_type: str
-    brand: Optional[str]
-    model_name: Optional[str]
-    size: Optional[str]
-    color: Optional[str]
+    brand: str | None
+    model_name: str | None
+    size: str | None
+    color: str | None
     condition: str  # "New" | "Excellent" | "Good" | "Fair" | "Poor"
-    condition_notes: Optional[str]
+    condition_notes: str | None
     confidence: float
-    accessories_included: List[str]
+    accessories_included: list[str]
 
     # Images
-    photos: List[str]
-    image_analysis_raw: Optional[dict]
+    photos: list[str]
+    image_analysis_raw: dict | None
 
     # Price research
-    ebay_price_stats: Optional[PriceStats]
-    vinted_price_stats: Optional[PriceStats]
-    ebay_query_used: Optional[str]
-    vinted_query_used: Optional[str]
+    ebay_price_stats: PriceStats | None
+    vinted_price_stats: PriceStats | None
+    ebay_query_used: str | None
+    vinted_query_used: str | None
 
     # Decision
-    suggested_price: Optional[float]
-    preferred_platform: Optional[str]  # "ebay" | "vinted" | "both"
-    platform_reasoning: Optional[str]
+    suggested_price: float | None
+    preferred_platform: str | None  # "ebay" | "vinted" | "both"
+    platform_reasoning: str | None
+    fast_sale: bool  # User preference for discount pricing
 
     # Output
-    listing_draft: Optional[ListingDraft]
+    listing_draft: ListingDraft | None
 
     # Control flow
     needs_clarification: bool
-    clarification_question: Optional[str]
-    error_state: Optional[str]
-    retry_count: int
+    clarification_question: str | None
+    error_state: str | None
+    retry_count: Annotated[int, operator.add]

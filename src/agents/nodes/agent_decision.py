@@ -36,6 +36,7 @@ def _format_price_stats(stats: PriceStats | None) -> str:
 
     Returns:
         Formatted string describing the price statistics.
+
     """
     if stats is None:
         return "No data available"
@@ -65,6 +66,7 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
 
     Raises:
         LLMError: If LLM call fails after all retries.
+
     """
     settings = get_settings()
 
@@ -86,11 +88,12 @@ async def agent_decision(state: ListState) -> dict[str, Any]:
     brand = state.get("brand") or "Unknown brand"
     condition = state.get("condition", "Good")
     condition_notes = state.get("condition_notes") or "None"
+    fast_sale = state.get("fast_sale", True)
 
     # Calculate base price and platform using PricingService
     pricing_service = PricingService(settings)
     calculated_price, calculated_platform = pricing_service.calculate_suggested_price(
-        ebay_stats, vinted_stats
+        ebay_stats, vinted_stats, fast_sale=fast_sale
     )
 
     # Format price stats for prompts

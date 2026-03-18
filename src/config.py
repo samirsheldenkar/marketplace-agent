@@ -1,7 +1,6 @@
 """Application configuration using Pydantic Settings."""
 
 from functools import lru_cache
-from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -39,6 +38,7 @@ class Settings(BaseSettings):
         api_port: API server port.
         api_key: API key for authentication.
         api_rate_limit_rpm: Rate limit in requests per minute.
+
     """
 
     model_config = SettingsConfigDict(
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # Image handling
     max_image_size_mb: int = 10
     max_images_per_listing: int = 10
-    allowed_image_formats: List[str] = ["jpg", "jpeg", "png", "webp", "gif"]
+    allowed_image_formats: list[str] = ["jpg", "jpeg", "png", "webp", "gif"]
     image_storage_path: str = "/tmp/marketplace_images"
 
     # Cost controls
@@ -80,7 +80,7 @@ class Settings(BaseSettings):
 
     # Scraper config
     apify_api_token: str = ""
-    apify_ebay_actor_id: str = "apify/ebay-scraper"
+    apify_ebay_actor_id: str = "caffein.dev/ebay-sold-listings"
     ebay_country: str = "GB"
     vinted_country: str = "GB"
 
@@ -101,5 +101,6 @@ def get_settings() -> Settings:
 
     Returns:
         Settings: The application settings instance.
+
     """
     return Settings()

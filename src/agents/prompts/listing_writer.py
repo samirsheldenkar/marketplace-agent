@@ -4,10 +4,8 @@ This module contains prompts for the drafting model (Ollama/Llama 3) to generate
 compelling, SEO-optimized listing content for eBay and Vinted platforms.
 """
 
-from typing import Dict, List
 
 from pydantic import BaseModel, Field
-
 
 WRITER_SYSTEM = """You are an expert marketplace copywriter specializing in eBay and Vinted listings for the UK market. Your role is to create compelling, SEO-optimized listing content that drives sales while maintaining honesty and accuracy.
 
@@ -108,7 +106,7 @@ class ListingDraftResult(BaseModel):
         min_length=100,
         max_length=2000,
     )
-    category_suggestions: List[str] = Field(
+    category_suggestions: list[str] = Field(
         ...,
         description="Platform-specific category suggestions in order of relevance",
         min_length=1,
@@ -124,7 +122,7 @@ class ListingDraftResult(BaseModel):
         description="Returns policy text compliant with UK consumer rights",
         max_length=500,
     )
-    platform_variants: Dict[str, Dict] = Field(
+    platform_variants: dict[str, dict] = Field(
         default_factory=dict,
         description="Platform-specific overrides when preferred_platform is 'both'. "
         "Keys are platform names ('ebay', 'vinted'), values contain 'title' and/or 'description' tweaks.",

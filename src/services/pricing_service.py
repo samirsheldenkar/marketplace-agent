@@ -1,6 +1,5 @@
 """Pricing service for calculations and recommendations."""
 
-from typing import Optional
 
 from src.config import Settings
 from src.models.state import PriceStats
@@ -14,22 +13,26 @@ class PricingService:
 
         Args:
             settings: Application settings
+
         """
         self.settings = settings
 
     def calculate_suggested_price(
         self,
-        ebay_stats: Optional[PriceStats],
-        vinted_stats: Optional[PriceStats],
+        ebay_stats: PriceStats | None,
+        vinted_stats: PriceStats | None,
+        fast_sale: bool = True,
     ) -> tuple[float, str]:
         """Calculate suggested price and determine preferred platform.
 
         Args:
             ebay_stats: eBay price statistics
             vinted_stats: Vinted price statistics
+            fast_sale: Whether to apply the quick sale discount
 
         Returns:
             Tuple of (suggested_price, preferred_platform)
+
         """
         prices = []
         volumes = {"ebay": 0, "vinted": 0}
@@ -49,9 +52,12 @@ class PricingService:
         # Calculate average of available medians if multiple exist, else use the single available median
         overall_median = sum(prices) / len(prices)
 
-        # Apply discount for quick sale
-        discount_factor = 1 - (self.settings.price_discount_pct / 100)
-        suggested_price = round(overall_median * discount_factor, 2)
+        # Apply discount for quick sale if requested
+        if fast_sale:
+            discount_factor = 1 - (self.settings.price_discount_pct / 100)
+            suggested_price = round(overall_median * discount_factor, 2)
+        else:
+            suggested_price = round(overall_median, 2)
 
         # Determine preferred platform
         if volumes["ebay"] > volumes["vinted"] * 2:

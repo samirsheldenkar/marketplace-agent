@@ -1,9 +1,7 @@
 """Decision prompts for pricing and platform selection."""
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
-
 
 DECISION_SYSTEM = """You are an expert marketplace pricing strategist specializing in optimal pricing and platform selection for resale items.
 

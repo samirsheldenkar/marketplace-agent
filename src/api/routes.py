@@ -1,6 +1,5 @@
 """FastAPI route definitions."""
 
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -9,10 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.schemas import (
     ClarificationRequest,
     ClarificationResponse,
-    CreateListingRequest,
     CreateListingResponse,
     GetListingResponse,
-    HealthResponse,
 )
 from src.config import Settings, get_settings
 from src.db.session import get_db
@@ -23,11 +20,11 @@ router = APIRouter()
 @router.post("/listing", response_model=CreateListingResponse)
 async def create_listing(
     request: Request,
-    images: List[UploadFile] = File(...),
-    brand: Optional[str] = Form(None),
-    size: Optional[str] = Form(None),
-    color: Optional[str] = Form(None),
-    notes: Optional[str] = Form(None),
+    images: list[UploadFile] = File(...),
+    brand: str | None = Form(None),
+    size: str | None = Form(None),
+    color: str | None = Form(None),
+    notes: str | None = Form(None),
     fast_sale: bool = Form(True, description="Apply discount pricing for quick sale"),
     settings: Settings = Depends(get_settings),
     db: AsyncSession = Depends(get_db),

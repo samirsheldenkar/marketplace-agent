@@ -1,9 +1,7 @@
 """Image analysis prompts for vision model (GPT-4o via LiteLLM)."""
 
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 IMAGE_ANALYSIS_SYSTEM = """You are an expert item analyzer for marketplace listings. Your role is to carefully examine product photos and extract detailed, accurate information about items for sale.
 
@@ -66,19 +64,19 @@ class ImageAnalysisResult(BaseModel):
         ...,
         description="The type of item identified (e.g., 'headphones', 'dress', 'laptop')",
     )
-    brand: Optional[str] = Field(
+    brand: str | None = Field(
         None,
         description="Brand name if identifiable from logos, labels, or design",
     )
-    model_name: Optional[str] = Field(
+    model_name: str | None = Field(
         None,
         description="Specific model name or number if identifiable",
     )
-    color: Optional[str] = Field(
+    color: str | None = Field(
         None,
         description="Primary color(s) of the item",
     )
-    size: Optional[str] = Field(
+    size: str | None = Field(
         None,
         description="Size information (e.g., 'M', '42', '15 inch')",
     )
@@ -86,11 +84,11 @@ class ImageAnalysisResult(BaseModel):
         ...,
         description="Condition assessment: New, Excellent, Good, Fair, or Poor",
     )
-    condition_notes: Optional[str] = Field(
+    condition_notes: str | None = Field(
         None,
         description="Additional notes about condition (wear, damage, defects)",
     )
-    accessories_included: List[str] = Field(
+    accessories_included: list[str] = Field(
         default_factory=list,
         description="List of accessories visible in photos",
     )

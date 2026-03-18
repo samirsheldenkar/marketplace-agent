@@ -1,5 +1,6 @@
 """Image analysis node for item recognition."""
 
+import asyncio
 import base64
 import logging
 from pathlib import Path
@@ -19,7 +20,7 @@ from src.models.state import ListState
 logger = logging.getLogger(__name__)
 
 
-def _load_image_as_base64(file_path: str) -> str:
+async def _load_image_as_base64(file_path: str) -> str:
     """Load an image file and return base64-encoded string.
 
     Args:
@@ -27,9 +28,14 @@ def _load_image_as_base64(file_path: str) -> str:
 
     Returns:
         Base64-encoded string of the image content.
+
     """
     path = Path(file_path)
-    image_bytes = path.read_bytes()
+
+    def _read_bytes():
+        return path.read_bytes()
+
+    image_bytes = await asyncio.to_thread(_read_bytes)
     return base64.b64encode(image_bytes).decode("utf-8")
 
 
@@ -41,6 +47,7 @@ def _get_image_media_type(file_path: str) -> str:
 
     Returns:
         Media type string (e.g., 'image/jpeg', 'image/png').
+
     """
     extension = Path(file_path).suffix.lower()
     media_types = {
@@ -53,7 +60,7 @@ def _get_image_media_type(file_path: str) -> str:
     return media_types.get(extension, "image/jpeg")
 
 
-def _build_image_content(file_path: str) -> dict[str, Any]:
+async def _build_image_content(file_path: str) -> dict[str, Any]:
     """Build the image content block for vision model input.
 
     Args:
@@ -61,8 +68,9 @@ def _build_image_content(file_path: str) -> dict[str, Any]:
 
     Returns:
         Dictionary with image_url containing base64 data.
+
     """
-    base64_data = _load_image_as_base64(file_path)
+    base64_data = await _load_image_as_base64(file_path)
     media_type = _get_image_media_type(file_path)
     return {
         "type": "image_url",
@@ -95,6 +103,7 @@ async def image_analysis(state: ListState) -> dict:
             - confidence: Confidence score (0.0-1.0)
             - accessories_included: List of visible accessories
             - image_analysis_raw: Raw analysis result dict
+
     """
     settings = get_settings()
     photos = state.get("photos", [])
@@ -135,7 +144,7 @@ async def image_analysis(state: ListState) -> dict:
 
     for photo_path in photos:
         try:
-            image_content = _build_image_content(photo_path)
+            image_content = await _build_image_content(photo_path)
             content.append(image_content)
         except Exception as e:
             logger.warning(
@@ -192,7 +201,7 @@ async def image_analysis(state: ListState) -> dict:
             "size": None,
             "color": None,
             "condition": "Good",
-            "condition_notes": f"Analysis failed: {str(e)}",
+            "condition_notes": f"Analysis failed: {e!s}",
             "confidence": 0.0,
             "accessories_included": [],
             "image_analysis_raw": {"error": str(e)},

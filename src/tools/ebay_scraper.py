@@ -7,7 +7,6 @@ response normalization.
 
 import asyncio
 import statistics
-from typing import Optional
 
 import httpx
 import structlog
@@ -27,7 +26,7 @@ async def scrape_ebay_sold_listings(
     query: str,
     country: str = "GB",
     max_results: int = 50,
-) -> Optional[PriceStats]:
+) -> PriceStats | None:
     """Scrape eBay sold listings for price statistics.
 
     Uses the Apify platform to fetch sold listings from eBay and
@@ -43,6 +42,7 @@ async def scrape_ebay_sold_listings(
 
     Raises:
         ScraperError: If the scraper encounters a critical error.
+
     """
     settings = get_settings()
 
@@ -199,7 +199,7 @@ async def _wait_for_results(
     run_id: str,
     headers: dict,
     timeout_seconds: int,
-) -> Optional[list[dict]]:
+) -> list[dict] | None:
     """Wait for Apify actor run to complete and fetch results.
 
     Polls the Apify API for run status and retrieves the dataset
@@ -213,6 +213,7 @@ async def _wait_for_results(
 
     Returns:
         List of item dictionaries, or None on failure.
+
     """
     status_url = f"https://api.apify.com/v2/actor-runs/{run_id}"
     dataset_url = f"https://api.apify.com/v2/actor-runs/{run_id}/dataset/items"
@@ -276,6 +277,7 @@ def _normalize_to_price_stats(items: list[dict], query: str) -> PriceStats:
 
     Returns:
         PriceStats dictionary with calculated statistics.
+
     """
     prices = []
 
@@ -314,7 +316,7 @@ def _normalize_to_price_stats(items: list[dict], query: str) -> PriceStats:
     )
 
 
-def _extract_price(item: dict) -> Optional[float]:
+def _extract_price(item: dict) -> float | None:
     """Extract price from an Apify item response.
 
     Handles various price formats that may be returned by the
@@ -325,6 +327,7 @@ def _extract_price(item: dict) -> Optional[float]:
 
     Returns:
         Price as float, or None if extraction fails.
+
     """
     # Try common price field names from Apify eBay scraper
     price_fields = ["price", "soldPrice", "currentPrice", "itemPrice"]
@@ -368,6 +371,7 @@ def _is_retryable_error(status_code: int) -> bool:
 
     Returns:
         True if the error is retryable, False otherwise.
+
     """
     # 429: Rate limit (retry after backoff)
     # 500, 502, 503, 504: Server errors (may be temporary)

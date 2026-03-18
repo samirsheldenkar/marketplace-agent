@@ -36,6 +36,7 @@ def _build_price_research_summary(state: ListState) -> str:
 
     Returns:
         Formatted string summarizing price research from both platforms.
+
     """
     lines = []
 
@@ -80,6 +81,7 @@ def _format_optional(value: Any, default: str = "Not specified") -> str:
 
     Returns:
         Formatted string representation.
+
     """
     if value is None:
         return default
@@ -107,6 +109,7 @@ async def _call_llm_with_retry(
 
     Raises:
         LLMError: If all retries fail.
+
     """
     last_error: Exception | None = None
 
@@ -205,6 +208,7 @@ async def listing_writer(state: ListState) -> dict[str, Any]:
 
     Raises:
         LLMError: If both drafting and reasoning models fail.
+
     """
     settings = get_settings()
 

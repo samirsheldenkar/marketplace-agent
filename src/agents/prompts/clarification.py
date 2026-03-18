@@ -1,9 +1,7 @@
 """Clarification prompts for generating targeted questions when confidence is low."""
 
-from typing import List
 
 from pydantic import BaseModel, Field
-
 
 CLARIFICATION_SYSTEM = """You are a helpful marketplace listing assistant. Your role is to review item attributes and confidence scores to determine if clarification is needed.
 
@@ -73,6 +71,7 @@ class ClarificationResult(BaseModel):
             the threshold for proceeding without clarification.
         reasoning: Brief explanation of why clarification is or isn't needed,
             including which critical fields are missing for the item type.
+
     """
 
     clarification_question: str = Field(
@@ -80,7 +79,7 @@ class ClarificationResult(BaseModel):
         description="Single targeted question for the user, empty if no clarification needed",
         max_length=500,
     )
-    missing_fields: List[str] = Field(
+    missing_fields: list[str] = Field(
         default_factory=list,
         description="List of field names that need clarification",
         examples=[["size", "brand"], ["model_name", "condition_notes"]],

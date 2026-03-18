@@ -25,6 +25,7 @@ async def verify_api_key(
 
     Raises:
         HTTPException: If API key is invalid or missing
+
     """
     if not settings.api_key:
         # Development mode - no API key required
